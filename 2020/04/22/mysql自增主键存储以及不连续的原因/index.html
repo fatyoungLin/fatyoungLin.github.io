@@ -1,0 +1,756 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="自增主键可以让聚集索引尽量地保持递增顺序插入，避免了随机查询，从而提高了查询效率 但实际上，MySQL 的自增主键并不能保证一定是连续递增的。 下面举个例子来看下，如下所示创建一张表：  自增值保存在哪里？ 使用 insert into test_pk values(null, 1, 1) 插入一行数据，再执行 show create table 命令来看一下表的结构定义：  上述表的结构定义存放">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql自增主键存储以及不连续的原因">
+<meta property="og:url" content="http://example.com/2020/04/22/mysql%E8%87%AA%E5%A2%9E%E4%B8%BB%E9%94%AE%E5%AD%98%E5%82%A8%E4%BB%A5%E5%8F%8A%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E5%8E%9F%E5%9B%A0/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="自增主键可以让聚集索引尽量地保持递增顺序插入，避免了随机查询，从而提高了查询效率 但实际上，MySQL 的自增主键并不能保证一定是连续递增的。 下面举个例子来看下，如下所示创建一张表：  自增值保存在哪里？ 使用 insert into test_pk values(null, 1, 1) 插入一行数据，再执行 show create table 命令来看一下表的结构定义：  上述表的结构定义存放">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://s5.51cto.com/oss/202212/06/8423be962d3ee0f6791415862a724f10d27587.png">
+<meta property="og:image" content="https://s5.51cto.com/oss/202212/06/c1d71aa19e9aaafd1233071dc3568a11518ffd.png">
+<meta property="og:image" content="https://s2.51cto.com/oss/202212/06/1553db7862697256c33892247e1499a65f304c.png">
+<meta property="og:image" content="https://s2.51cto.com/oss/202212/06/15b37c416711345adc68633ab75e398ec94093.png">
+<meta property="og:image" content="https://s8.51cto.com/oss/202212/06/03a648b7050e3a8c3cb68258a79b4e214b872f.png">
+<meta property="og:image" content="https://s6.51cto.com/oss/202212/06/76448ee29fb4d4adac039306b7f1f835f2d5c8.png">
+<meta property="og:image" content="https://s6.51cto.com/oss/202212/06/e6c18f6568aef6091280909bfebfb4a60d5b2d.png">
+<meta property="og:image" content="https://s5.51cto.com/oss/202212/06/77b9dc713db0bd0d103505b240a00c00f51135.png">
+<meta property="og:image" content="https://s8.51cto.com/oss/202212/06/d6c6199092cdae2ac3d461b8f7bb15b7de302c.png">
+<meta property="og:image" content="https://s2.51cto.com/oss/202212/06/54ea36170d283a8408a841429fe4571b3c58d0.png">
+<meta property="og:image" content="https://s8.51cto.com/oss/202212/06/83fb55a80afc00888c16007b9670ec0b78f76a.png">
+<meta property="og:image" content="https://s3.51cto.com/oss/202212/06/350e71c19095b2ced1c1778b742db066795a41.png">
+<meta property="og:image" content="https://s8.51cto.com/oss/202212/06/b8a5ee4497ba8bb186b057c2bbb52bd7d8dd58.png">
+<meta property="og:image" content="https://s9.51cto.com/oss/202212/06/09e04d819d03f22c8228347276c569f5c5aee0.png">
+<meta property="og:image" content="https://s8.51cto.com/oss/202212/06/44f390b018649068b201008b6e54873be48ce7.png">
+<meta property="og:image" content="https://s5.51cto.com/oss/202212/06/52f93ec10530b3b822b9869ca9ab5d26bb5e6d.png">
+<meta property="og:image" content="https://s2.51cto.com/oss/202212/06/c3df70f61a5aaf02bfc4197e825d7cd6d6343a.png">
+<meta property="og:image" content="https://s3.51cto.com/oss/202212/06/11f14235046bc5a91d4177b0abc5db051802da.png">
+<meta property="og:image" content="https://s4.51cto.com/oss/202212/06/8420f0a70791c7b507917953428195055c0286.png">
+<meta property="og:image" content="https://s7.51cto.com/oss/202212/06/135d92203485a60dba8443821c469751510bc3.png">
+<meta property="article:published_time" content="2020-04-22T13:22:29.000Z">
+<meta property="article:modified_time" content="2024-02-12T05:33:47.170Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://s5.51cto.com/oss/202212/06/8423be962d3ee0f6791415862a724f10d27587.png">
+  
+  
+  
+  <title>mysql自增主键存储以及不连续的原因 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="mysql自增主键存储以及不连续的原因"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2020-04-22 21:22" pubdate>
+          April 22, 2020 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          34 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">mysql自增主键存储以及不连续的原因</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>自增主键可以让聚集索引尽量地保持递增顺序插入，避免了随机查询，从而提高了查询效率</p>
+<p>但实际上，MySQL 的自增主键并不能保证一定是连续递增的。</p>
+<p>下面举个例子来看下，如下所示创建一张表：</p>
+<p><img src="https://s5.51cto.com/oss/202212/06/8423be962d3ee0f6791415862a724f10d27587.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>自增值保存在哪里？</p>
+<p>使用 insert into test_pk values(null, 1, 1) 插入一行数据，再执行 show create table 命令来看一下表的结构定义：</p>
+<p><img src="https://s5.51cto.com/oss/202212/06/c1d71aa19e9aaafd1233071dc3568a11518ffd.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>上述表的结构定义存放在后缀名为 .frm 的本地文件中，在 MySQL 安装目录下的 data 文件夹下可以找到这个 .frm 文件：</p>
+<p><img src="https://s2.51cto.com/oss/202212/06/1553db7862697256c33892247e1499a65f304c.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>从上述表结构可以看到，表定义里面出现了一个 AUTO_INCREMENT&#x3D;2，表示下一次插入数据时，如果需要自动生成自增值，会生成 id &#x3D; 2。</p>
+<p>但需要注意的是，自增值并不会保存在这个表结构也就是 .frm 文件中，不同的引擎对于自增值的保存策略不同：</p>
+<p>1）MyISAM 引擎的自增值保存在数据文件中</p>
+<p>2）InnoDB 引擎的自增值，其实是保存在了内存里，并没有持久化。第一次打开表的时候，都会去找自增值的最大值 max(id)，然后将 max(id)+1 作为这个表当前的自增值。</p>
+<p>举个例子：我们现在表里当前数据行里最大的 id 是 1，AUTO_INCREMENT&#x3D;2，对吧。这时候，我们删除 id&#x3D;1 的行，AUTO_INCREMENT 还是 2。</p>
+<p><img src="https://s2.51cto.com/oss/202212/06/15b37c416711345adc68633ab75e398ec94093.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>但如果马上重启 MySQL 实例，重启后这个表的 AUTO_INCREMENT 就会变成 1。﻿也就是说，MySQL 重启可能会修改一个表的 AUTO_INCREMENT 的值。</p>
+<p><img src="https://s8.51cto.com/oss/202212/06/03a648b7050e3a8c3cb68258a79b4e214b872f.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p><img src="https://s6.51cto.com/oss/202212/06/76448ee29fb4d4adac039306b7f1f835f2d5c8.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>以上，是在我本地 MySQL 5.x 版本的实验，实际上，到了 MySQL 8.0 版本后，自增值的变更记录被放在了 redo log 中，提供了自增值持久化的能力，也就是实现了“如果发生重启，表的自增值可以根据 redo  log 恢复为 MySQL 重启前的值”</p>
+<p>也就是说对于上面这个例子来说，重启实例后这个表的 AUTO_INCREMENT 仍然是 2。</p>
+<p>理解了 MySQL 自增值到底保存在哪里以后，我们再来看看自增值的修改机制，并以此引出第一种自增值不连续的场景。</p>
+<h4 id="自增值不连续场景-1"><a href="#自增值不连续场景-1" class="headerlink" title="自增值不连续场景 1"></a>自增值不连续场景 1</h4><p>在 MySQL 里面，如果字段 id 被定义为 AUTO_INCREMENT，在插入一行数据的时候，自增值的行为如下：</p>
+<ul>
+<li>如果插入数据时 id 字段指定为 0、null 或未指定值，那么就把这个表当前的 AUTO_INCREMENT 值填到自增字段；</li>
+<li>如果插入数据时 id 字段指定了具体的值，就直接使用语句里指定的值。</li>
+</ul>
+<p>根据要插入的值和当前自增值的大小关系，自增值的变更结果也会有所不同。假设某次要插入的值是 insert_num，当前的自增值是 autoIncrement_num：</p>
+<p>如果 insert_num &lt; autoIncrement_num，那么这个表的自增值不变</p>
+<p>如果 insert_num &gt;&#x3D; autoIncrement_num，就需要把当前自增值修改为新的自增值</p>
+<p>也就是说，如果插入的 id 是 100，当前的自增值是 90，insert_num &gt;&#x3D; autoIncrement_num，那么自增值就会被修改为新的自增值即 101</p>
+<p>一定是这样吗？</p>
+<p>非也~</p>
+<p>了解过分布式 id 的小伙伴一定知道，为了避免两个库生成的主键发生冲突，我们可以让一个库的自增 id 都是奇数，另一个库的自增 id 都是偶数</p>
+<p>这个奇数偶数其实是通过 auto_increment_offset 和 auto_increment_increment 这两个参数来决定的，这俩分别用来表示自增的初始值和步长，默认值都是 1。</p>
+<p>所以，上面的例子中生成新的自增值的步骤实际是这样的：从 auto_increment_offset 开始，以 auto_increment_increment 为步长，持续叠加，直到找到第一个大于 100  的值，作为新的自增值。</p>
+<p>所以，这种情况下，自增值可能会是 102，103 等等之类的，就会导致不连续的主键 id。</p>
+<p>更遗憾的是，即使在自增初始值和步长这两个参数都设置为 1 的时候，自增主键 id 也不一定能保证主键是连续的</p>
+<h4 id="自增值不连续场景-2"><a href="#自增值不连续场景-2" class="headerlink" title="自增值不连续场景 2"></a>自增值不连续场景 2</h4><p>举个例子，我们现在往表里插入一条 (null,1,1) 的记录，生成的主键是 1，AUTO_INCREMENT&#x3D; 2，对吧</p>
+<p><img src="https://s6.51cto.com/oss/202212/06/e6c18f6568aef6091280909bfebfb4a60d5b2d.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>这时我再执行一条插入 (null,1,1) 的命令，很显然会报错 Duplicate entry，因为我们设置了一个唯一索引字段 a：</p>
+<p><img src="https://s5.51cto.com/oss/202212/06/77b9dc713db0bd0d103505b240a00c00f51135.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>但是，你会惊奇的发现，虽然插入失败了，但自增值仍然从 2 增加到了 3！</p>
+<p>这是为啥？</p>
+<p>我们来分析下这个 insert 语句的执行流程：</p>
+<ul>
+<li>执行器调用 InnoDB 引擎接口准备插入一行记录 (null,1,1);</li>
+<li>InnoDB 发现用户没有指定自增 id 的值，则获取表test_pk 当前的自增值 2；</li>
+<li>将传入的记录改成 (2,1,1);</li>
+<li>将表的自增值改成 3；</li>
+<li>继续执行插入数据操作，由于已经存在 a&#x3D;1 的记录，所以报 Duplicate key error，语句返回</li>
+</ul>
+<p>可以看到，自增值修改的这个操作，是在真正执行插入数据的操作之前。</p>
+<p>这个语句真正执行的时候，因为碰到唯一键 a 冲突，所以 id &#x3D; 2 这一行并没有插入成功，但也没有将自增值再改回去。所以，在这之后，再插入新的数据行时，拿到的自增 id 就是 3。也就是说，出现了自增主键不连续的情况。</p>
+<p>至此，我们已经罗列了两种自增主键不连续的情况：</p>
+<ul>
+<li>自增初始值和自增步长设置不为 1</li>
+<li>唯一键冲突</li>
+</ul>
+<p>除此之外，事务回滚也会导致这种情况</p>
+<h4 id="自增值不连续场景-3"><a href="#自增值不连续场景-3" class="headerlink" title="自增值不连续场景 3"></a>自增值不连续场景 3</h4><p>我们现在表里有一行 (1,1,1) 的记录，AUTO_INCREMENT &#x3D; 3：</p>
+<p><img src="https://s8.51cto.com/oss/202212/06/d6c6199092cdae2ac3d461b8f7bb15b7de302c.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>我们先插入一行数据 (null, 2, 2)，也就是 (3, 2, 2) 嘛，并且 AUTO_INCREMENT 变为 4：</p>
+<p><img src="https://s2.51cto.com/oss/202212/06/54ea36170d283a8408a841429fe4571b3c58d0.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>再去执行这样一段 SQL：</p>
+<p><img src="https://s8.51cto.com/oss/202212/06/83fb55a80afc00888c16007b9670ec0b78f76a.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>虽然我们插入了一条 (null, 3, 3) 记录，但是使用 rollback 进行回滚了，所以数据库中是没有这条记录的：</p>
+<p><img src="https://s3.51cto.com/oss/202212/06/350e71c19095b2ced1c1778b742db066795a41.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>在这种事务回滚的情况下，自增值并没有同样发生回滚！如下图所示，自增值仍然固执地从 4 增加到了 5：</p>
+<p><img src="https://s8.51cto.com/oss/202212/06/b8a5ee4497ba8bb186b057c2bbb52bd7d8dd58.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>所以这时候我们再去插入一条数据（null, 3, 3）的时候，主键 id 就会被自动赋为 5 了：</p>
+<p><img src="https://s9.51cto.com/oss/202212/06/09e04d819d03f22c8228347276c569f5c5aee0.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>那么，为什么在出现唯一键冲突或者回滚的时候，MySQL 没有把表的自增值改回去呢？回退回去的话不就不会发生自增 id 不连续了吗？</p>
+<p>事实上，这么做的主要原因是为了提高性能。</p>
+<p>我们直接用反证法来验证：假设 MySQL 在事务回滚的时候会把自增值改回去，会发生什么？</p>
+<p>现在有两个并行执行的事务 A 和 B，在申请自增值的时候，为了避免两个事务申请到相同的自增 id，肯定要加锁，然后顺序申请，对吧。</p>
+<ul>
+<li>假设事务 A 申请到了 id &#x3D; 1， 事务 B 申请到 id&#x3D;2，那么这时候表 t 的自增值是3，之后继续执行。</li>
+<li>事务 B 正确提交了，但事务 A 出现了唯一键冲突，也就是 id &#x3D; 1 的那行记录插入失败了，那如果允许事务 A 把自增 id 回退，也就是把表的当前自增值改回 1，那么就会出现这样的情况：表里面已经有 id &#x3D; 2 的行，而当前的自增 id 值是 1。</li>
+<li>接下来，继续执行的其他事务就会申请到 id&#x3D;2。这时，就会出现插入语句报错“主键冲突”。</li>
+</ul>
+<p><img src="https://s8.51cto.com/oss/202212/06/44f390b018649068b201008b6e54873be48ce7.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>而为了解决这个主键冲突，有两种方法：</p>
+<ul>
+<li>每次申请 id 之前，先判断表里面是否已经存在这个 id，如果存在，就跳过这个 id</li>
+<li>把自增 id 的锁范围扩大，必须等到一个事务执行完成并提交，下一个事务才能再申请自增 id</li>
+</ul>
+<p>很显然，上述两个方法的成本都比较高，会导致性能问题。而究其原因呢，是我们假设的这个 “允许自增 id 回退”。</p>
+<p>因此，InnoDB 放弃了这个设计，语句执行失败也不回退自增 id。也正是因为这样，所以才只保证了自增 id 是递增的，但不保证是连续的。</p>
+<p>综上，已经分析了三种自增值不连续的场景，还有第四种场景：批量插入数据。</p>
+<h4 id="自增值不连续场景-4"><a href="#自增值不连续场景-4" class="headerlink" title="自增值不连续场景 4"></a>自增值不连续场景 4</h4><p>对于批量插入数据的语句，MySQL 有一个批量申请自增 id 的策略：</p>
+<ul>
+<li>语句执行过程中，第一次申请自增 id，会分配 1 个；</li>
+<li>1 个用完以后，这个语句第二次申请自增 id，会分配 2 个；</li>
+<li>2 个用完以后，还是这个语句，第三次申请自增 id，会分配 4 个；</li>
+<li>依此类推，同一个语句去申请自增 id，每次申请到的自增 id 个数都是上一次的两倍。</li>
+</ul>
+<p>注意，这里说的批量插入数据，不是在普通的 insert 语句里面包含多个 value 值！！！，因为这类语句在申请自增 id 的时候，是可以精确计算出需要多少个 id 的，然后一次性申请，申请完成后锁就可以释放了。</p>
+<p>而对于 insert … select、replace … select 和 load data 这种类型的语句来说，MySQL 并不知道到底需要申请多少 id，所以就采用了这种批量申请的策略，毕竟一个一个申请的话实在太慢了。</p>
+<p>举个例子，假设我们现在这个表有下面这些数据：</p>
+<p><img src="https://s5.51cto.com/oss/202212/06/52f93ec10530b3b822b9869ca9ab5d26bb5e6d.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>我们创建一个和当前表 test_pk 有相同结构定义的表 test_pk2：</p>
+<p><img src="https://s2.51cto.com/oss/202212/06/c3df70f61a5aaf02bfc4197e825d7cd6d6343a.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>然后使用 insert…select 往 teset_pk2 表中批量插入数据：</p>
+<p><img src="https://s3.51cto.com/oss/202212/06/11f14235046bc5a91d4177b0abc5db051802da.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>可以看到，成功导入了数据。</p>
+<p>再来看下 test_pk2 的自增值是多少：</p>
+<p><img src="https://s4.51cto.com/oss/202212/06/8420f0a70791c7b507917953428195055c0286.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<p>如上分析，是 8 而不是 6</p>
+<p>具体来说，insert…select 实际上往表中插入了 5 行数据 （1 1）（2 2）（3 3）（4 4）（5 5）。但是，这五行数据是分三次申请的自增 id，结合批量申请策略，每次申请到的自增 id 个数都是上一次的两倍，所以：</p>
+<ul>
+<li>第一次申请到了一个 id：id&#x3D;1</li>
+<li>第二次被分配了两个 id：id&#x3D;2 和 id&#x3D;3</li>
+<li>第三次被分配到了 4 个 id：id&#x3D;4、id &#x3D; 5、id &#x3D; 6、id&#x3D;7</li>
+</ul>
+<p>由于这条语句实际只用上了 5 个 id，所以 id&#x3D;6 和 id&#x3D;7 就被浪费掉了。之后，再执行 insert into test_pk2 values(null,6,6)，实际上插入的数据就是（8,6,6)：</p>
+<p><img src="https://s7.51cto.com/oss/202212/06/135d92203485a60dba8443821c469751510bc3.png" srcset="/img/loading.gif" lazyload alt="图片"></p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>总结下自增值不连续的四个场景：</p>
+<ul>
+<li>自增初始值和自增步长设置不为 1</li>
+<li>唯一键冲突</li>
+<li>事务回滚</li>
+<li>批量插入（如insert…select 语句）</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/mysql/" class="print-no-link">#mysql</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>mysql自增主键存储以及不连续的原因</div>
+      <div>http://example.com/2020/04/22/mysql自增主键存储以及不连续的原因/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>April 22, 2020</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/11/21/mysql%20DDL/" title="mysql DDL">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">mysql DDL</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2019/08/09/AQS%E5%8E%9F%E7%90%86%E8%AF%A6%E8%A7%A3/" title="AQS原理详解">
+                        <span class="hidden-mobile">AQS原理详解</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

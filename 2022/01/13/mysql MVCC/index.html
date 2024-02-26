@@ -1,0 +1,651 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="![image-20210813102852376](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20210813102852376.png) 可重复读级别下Q1为3，Q2为1 k这一行数据会有多个版本号，这个版本号就是每个事务的transa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql MVCC">
+<meta property="og:url" content="http://example.com/2022/01/13/mysql%20MVCC/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="![image-20210813102852376](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20210813102852376.png) 可重复读级别下Q1为3，Q2为1 k这一行数据会有多个版本号，这个版本号就是每个事务的transa">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-01-13T10:30:28.000Z">
+<meta property="article:modified_time" content="2024-02-10T08:17:58.370Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>mysql MVCC - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="mysql MVCC"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-01-13 18:30" pubdate>
+          January 13, 2022 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">mysql MVCC</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>![image-20210813102852376](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20210813102852376.png)</p>
+<h5 id="可重复读级别下"><a href="#可重复读级别下" class="headerlink" title="可重复读级别下"></a>可重复读级别下</h5><p>Q1为3，Q2为1</p>
+<p>k这一行数据会有多个版本号，这个版本号就是每个事务的transactionId（简称t_id），t_id是每个事务的唯一主键，是每个事务开始的时候向INNODB的事务系统申请的，是按申请顺序严格递增的，每次事务更新数据的时候，都会生成一个新的数据版本，并且把t_id赋值给这个数据版本的事务ID ，记为row t_id ,同时，这行数据旧的数据版本也要保留。</p>
+<p><strong>也就是说，数据表中的一行记录，其实可能有多个版本，每个版本有自己的row t_id</strong></p>
+<p>![image-20210813103537224](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20210813103537224.png)</p>
+<p>按照可重复读的定义，一个事务启动的时候，能够看到所有已经提交的事务结果，但是之后，这个事务执行期间，其它事务的更新对它不可见。</p>
+<p>因此，INNODB代码实现上，一个事务只需要在启动的时候，找到所有已经提交的事务ID的最大值，记为Up_limit_id，如果一个数据版本的row t_id大于up_limit_id，就不承认这个版本，必须要找到它的上一个版本。当然，如果一个事务自己更新的数据，自己还是要认的。</p>
+<p>后面新的事务产生的row t_id肯定是大于up_limit_id的，对当前事务肯定是不可见的，但如果说，有一个事务早于当前事务启动，并且在后面更新了数据，由于这个事务早于当前事务开启，t_id也就小于当前事务的t_id,那么，当前事务会认可这个数据版本吗？ 答案是不会的，因为除了上面说的那个规则，还有一个规则就是：事务启动的时候还要保存“现在正在执行的所有事务ID列表” ，如果一个row t_id在这列表中，也要不可见。</p>
+<p>接下来，看一下为什么Q2的结果是1；</p>
+<p>假设： 事务A开始前，系统里已经提交的事务最大ID，即up_limit_id是99；</p>
+<p>事务A、B、C的版本号分别是100、101、102，且当前系统里没有别的事务；</p>
+<p>三个事务开始前，（1，1）这一行数据的row t_id是90。</p>
+<p>这样，事务A、B、C的up_limit_id都是99</p>
+<p>![image-20210813105845254](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20210813105845254.png)</p>
+<p>流程：第一个有效更新是事务C，把数据从（1，1）改成了（1，2）。这个时候，这条数据的最新版本的rowt t_id是102，而90成了历史版本。</p>
+<p>第二个有效更新是事务B，把数据从（1，2）改成了（1，3），这个数据的最新版本row t_id是101，102成了历史版本。</p>
+<p>现在事务A来读数据了，它的up_limit_id是99。</p>
+<p>找到（1，3）的时候，判 断row t_id &#x3D; 101 &gt; 99，要不起；</p>
+<p>找上一个历史版本，一看row t_id &#x3D; 102；还是要不起；</p>
+<p>往前找，（1，1），row t_id &#x3D; 90 ，是可见数据了。</p>
+<p>（1，1）这个历史版本在事务A提交后，就会被删掉。</p>
+<p>假设事务A在读取K之前先执行一次update语句，会是什么结果？</p>
+<p>事务A会拿到最新的数据，（1，3）进行update变成（1，4），再次执行select，拿出来就是（1，4）了。</p>
+<p>因为更新数据都是先读后写的，而这个读，只能读当前的值，称为“当前读” current read；</p>
+<p>所以更新的时候，就把row t_id更新为100了，自己的up_limit_id也变成了100，查询的时候，row t_id &#x3D; up_limit_id ，是可见的数据了。</p>
+<h5 id="如何解决幻读"><a href="#如何解决幻读" class="headerlink" title="如何解决幻读"></a>如何解决幻读</h5><p><strong>快照读的幻读是用MVCC解决的，当前的读的幻读是用间隙锁解决的。</strong></p>
+<p>innodb的默认事务隔离级别是rr（可重复读）。它的实现技术是mvcc。该技术不仅可以保证innodb的可重复读，而且可以防止幻读。（这也就是是此前以rr隔离级别实践时，不仅可以防止可重复读，也防止了幻读）但是它防止的是快照读，也就是读取的数据虽然是一致的，但是数据是历史数据。</p>
+<blockquote>
+<p>这个帖子里面就有一个实例：<a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_499740cb0100ugs7.html">MySQL的InnoDB的幻读问题</a><br>一些文章写到InnoDB的可重复读避免了“幻读”（phantom read），这个说法并不准确。</p>
+</blockquote>
+<p>那InnoDB指出的可以避免幻读是怎么回事呢？</p>
+<blockquote>
+<p>以下翻译自MySQL官网文档（<a target="_blank" rel="noopener" href="http://download.nust.na/pub6/mysql/doc/refman/5.5/en/innodb-next-key-locking.html%EF%BC%89%EF%BC%8C%E7%BF%BB%E8%AF%91%E6%B0%B4%E5%B9%B3%E4%B8%80%E8%88%AC%EF%BC%8C%E8%AF%B7%E8%A7%81%E8%B0%85%E3%80%82">http://download.nust.na/pub6/mysql/doc/refman/5.5/en/innodb-next-key-locking.html），翻译水平一般，请见谅。</a></p>
+</blockquote>
+<p>当隔离级别是可重复读，且禁用innodb_locks_unsafe_for_binlog的情况下，在搜索和扫描index的时候使用的next-key locks可以避免幻读。也就是说的间隙锁。</p>
+<p>InnoDB提供了next-key locks，但需要应用程加锁</p>
+<p>举个例子：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> child <span class="hljs-keyword">WHERE</span> id<span class="hljs-operator">&gt;</span> <span class="hljs-number">100</span> <span class="hljs-keyword">FOR</span> <span class="hljs-keyword">UPDATE</span>;<br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/mysql/" class="print-no-link">#mysql</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>mysql MVCC</div>
+      <div>http://example.com/2022/01/13/mysql MVCC/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>January 13, 2022</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/01/14/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9B+%E6%A0%91%E4%BD%9C%E4%B8%BA%E7%B4%A2%E5%BC%95%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" title="为什么选择B+树作为索引的数据结构">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">为什么选择B+树作为索引的数据结构</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/01/11/03%20%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%A0%E6%94%B9%E4%BA%86%E6%88%91%E8%BF%98%E7%9C%8B%E4%B8%8D%E8%A7%81%EF%BC%9F/" title="mysql事务隔离">
+                        <span class="hidden-mobile">mysql事务隔离</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Kafka 单个节点的极限处理能力接近每秒钟 2000 万条消息，吞吐量达到每秒钟 600MB。 那kafka是如何做到的呢？    1. 分区  生产者往Kafka发送消息时必须指定发往哪个主题，消费者需要订阅某个主题才能进行消费。一个主题下的分区可以分布在集群的不同broker上面，也就是说，一个主题可以横跨多个broker。这样的话，生产者在指定主题（可以指定也可以不指定分区）发送消息的时候">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kafka是如何做到高性能的">
+<meta property="og:url" content="http://example.com/2023/01/08/Kafka%20%E6%98%AF%E5%A6%82%E4%BD%95%E5%81%9A%E5%88%B0%E8%BF%99%E4%B9%88%E9%AB%98%E7%9A%84%E6%80%A7%E8%83%BD%E7%9A%84/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Kafka 单个节点的极限处理能力接近每秒钟 2000 万条消息，吞吐量达到每秒钟 600MB。 那kafka是如何做到的呢？    1. 分区  生产者往Kafka发送消息时必须指定发往哪个主题，消费者需要订阅某个主题才能进行消费。一个主题下的分区可以分布在集群的不同broker上面，也就是说，一个主题可以横跨多个broker。这样的话，生产者在指定主题（可以指定也可以不指定分区）发送消息的时候">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://segmentfault.com/img/bVbIC7u">
+<meta property="og:image" content="https://segmentfault.com/img/bVbIC7v">
+<meta property="og:image" content="https://pic2.zhimg.com/80/v2-af6f2640475607eb8d897c7c26342809_1440w.webp">
+<meta property="og:image" content="https://pic2.zhimg.com/80/v2-720b48c75b7a04c89452084c0c0d145d_1440w.webp">
+<meta property="og:image" content="https://pic3.zhimg.com/80/v2-38c2ed40892d07bab47c02d7a554e296_1440w.webp">
+<meta property="og:image" content="https://pic4.zhimg.com/80/v2-0f860c6481476ae796fa067a19cb70c3_1440w.webp">
+<meta property="article:published_time" content="2023-01-08T14:14:40.000Z">
+<meta property="article:modified_time" content="2024-02-13T07:16:40.728Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Kafka">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://segmentfault.com/img/bVbIC7u">
+  
+  
+  
+  <title>kafka是如何做到高性能的 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="kafka是如何做到高性能的"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-08 22:14" pubdate>
+          January 8, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">kafka是如何做到高性能的</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Kafka 单个节点的极限处理能力接近每秒钟 2000 万条消息，吞吐量达到每秒钟 600MB。</p>
+<p>那kafka是如何做到的呢？</p>
+<p>  <img src="https://segmentfault.com/img/bVbIC7u" srcset="/img/loading.gif" lazyload alt="00-33-50.jpg"></p>
+<h5 id="1-分区"><a href="#1-分区" class="headerlink" title="1. 分区"></a>1. 分区</h5><p>  生产者往Kafka发送消息时必须指定发往哪个主题，消费者需要订阅某个主题才能进行消费。一个主题下的分区可以分布在集群的不同broker上面，也就是说，一个主题可以横跨多个broker。这样的话，生产者在指定主题（可以指定也可以不指定分区）发送消息的时候，Kafka会将消息分发至不同的分区，如果这些分区不在同一个broker上，就相当于并发的写入多台broker，性能自然要比写入单台broker要高。对于消费者，Kafka引入了消费组(Consumer Group)的概念，每个消费者都有一个对应的消费组。一个分区只能被一个消费组中的一个消费者消费，但是可以被不同消费组中的另一个消费者消费。可以在一个消费组里起多个消费者，每个消费者消费一个分区，这样就提高了消费者的性能。需要注意的是，消费组里的消费者个数如果多于分区数的话，那些多出来的消费者就会处于空闲状态，所以一个消费组里的消费者个数跟分区数相等就好了。下图展示了消费者组与分区的关系。<br>    <img src="https://segmentfault.com/img/bVbIC7v" srcset="/img/loading.gif" lazyload alt="22-08-58.jpg"></p>
+<p>  </p>
+<p>分区的设计使得Kafka消息的读写性能可以突破单台broker的I&#x2F;O性能瓶颈，可以在创建主题的时候指定分区数，也可以在主题创建完成之后去修改分区数，通过增加分区数可以实现水平扩展，但是要注意，分区数也不是越多越好，一般达到某一个阈值之后，再增加分区数性能反而会下降，具体阈值需要对Kafka集群进行压测才能确定。</p>
+<h5 id=""><a href="#" class="headerlink" title=""></a></h5><h5 id="2-使用批量消息提升服务端处理能力"><a href="#2-使用批量消息提升服务端处理能力" class="headerlink" title="2. 使用批量消息提升服务端处理能力"></a>2. 使用批量消息提升服务端处理能力</h5><p>Kafka producer会将相同topic分区下的一组消息打包在一起形成一个批次（batch）以提升网络I&#x2F;O性能。(在必要情况下，我们可以对生产者的batch size进行一定的调整)<br>默认情况下，producer会立即发送batch，这样一个batch中通常不会包含太多的消息。为了提高batch的效率，生产者通常会对<strong>linger.ms</strong>来人为设置一个较小的延迟来保证有足够多的消息记录能封装在一个batch中。一旦过了linger.ms设置的事件，或者batch size已经达到最大值(<strong>batch.size的参数值</strong>)，这个batch将被认为已经完成。</p>
+<p>当你调用 send() 方法发送一条消息之后，无论你是同步发送还是异步发送，Kafka 都不会立即就把这条消息发送出去。它会先把这条消息，存放在内存中缓存起来，然后选择合适的时机把缓存中的所有消息组成一批，一次性发给 Broker。简单地说，就是攒一波一起发。</p>
+<p>在 Kafka 的服务端，也就是 Broker 这一端，又是如何处理这一批一批的消息呢？</p>
+<p>在服务端，Kafka 不会把一批消息再还原成多条消息，再一条一条地处理，这样太慢了。Kafka 这块儿处理的非常聪明，每批消息都会被当做一个“批消息”来处理。也就是说，在 Broker 整个处理流程中，无论是写入磁盘、从磁盘读出来、还是复制到其他副本这些流程中，<strong>批消息都不会被解开，一直是作为一条“批消息”来进行处理的。</strong></p>
+<p>在消费时，消息同样是以批为单位进行传递的，Consumer 从 Broker 拉到一批消息后，在客户端把批消息解开，再一条一条交给用户代码处理。</p>
+<p>比如说，你在客户端发送 30 条消息，在业务程序看来，是发送了 30 条消息，而对于 Kafka 的 Broker 来说，它其实就是处理了 1 条包含 30 条消息的“批消息”而已。显然处理 1 次请求要比处理 30 次请求要快得多。</p>
+<p>构建批消息和解开批消息分别在发送端和消费端的客户端完成，不仅减轻了 Broker 的压力，最重要的是减少了 Broker 处理请求的次数，提升了总体的处理能力。</p>
+<p>这就是 Kafka 用批量消息提升性能的方法。</p>
+<p>我们知道，相比于网络传输和内存，磁盘 IO 的速度是比较慢的。对于消息队列的服务端来说，性能的瓶颈主要在磁盘 IO 这一块。接下来我们看一下，Kafka 在磁盘 IO 这块儿做了哪些优化。</p>
+<h5 id="3-使用顺序读写提升磁盘-IO-性能"><a href="#3-使用顺序读写提升磁盘-IO-性能" class="headerlink" title="3. 使用顺序读写提升磁盘 IO 性能"></a>3. 使用顺序读写提升磁盘 IO 性能</h5><p>对于磁盘来说，它有一个特性，就是顺序读写的性能要远远好于随机读写。在 SSD（固态硬盘）上，顺序读写的性能要比随机读写快几倍，如果是机械硬盘，这个差距会达到几十倍。为什么呢？</p>
+<p>操作系统每次从磁盘读写数据的时候，需要先寻址，也就是先要找到数据在磁盘上的物理位置，然后再进行数据读写。如果是机械硬盘，这个寻址需要比较长的时间，因为它要移动磁头，这是个机械运动，机械硬盘工作的时候会发出咔咔的声音，就是移动磁头发出的声音。</p>
+<p>顺序读写相比随机读写省去了大部分的寻址时间，它只要寻址一次，就可以连续地读写下去，所以说，性能要比随机读写要好很多。</p>
+<p>Kafka 就是充分利用了磁盘的这个特性。它的存储设计非常简单，对于每个分区，它把从 Producer 收到的消息，顺序地写入对应的 log 文件中，一个文件写满了，就开启一个新的文件这样顺序写下去。消费的时候，也是从某个全局的位置开始，也就是某一个 log 文件中的某个位置开始，顺序地把消息读出来。</p>
+<p>这样一个简单的设计，充分利用了顺序读写这个特性，极大提升了 Kafka 在使用磁盘时的 IO 性能。</p>
+<p>接下来我们说一下 Kafka 是如何实现缓存的。</p>
+<h5 id="4-利用-PageCache-加速消息读写"><a href="#4-利用-PageCache-加速消息读写" class="headerlink" title="4. 利用 PageCache 加速消息读写"></a>4. 利用 PageCache 加速消息读写</h5><p>Kafka并不太依赖JVM内存大小，而是主要利用Page Cache，如果使用应用层缓存（JVM堆内存），会增加GC负担，增加停顿时间和延迟，创建对象的开销也会比较高。</p>
+<p>读取操作可以直接在Page Cache上进行，如果消费和生产速度相当，甚至不需要通过物理磁盘直接交换数据，这是Kafka高吞吐量的一个重要原因。</p>
+<p>这么做还有一个优势，如果Kafka重启，JVM内的Cache会失效，Page Cache依然可用。</p>
+<p><img src="https://pic2.zhimg.com/80/v2-af6f2640475607eb8d897c7c26342809_1440w.webp" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>在 Kafka 中，它会利用 PageCache 加速消息读写。PageCache 是现代操作系统都具有的一项基本特性。通俗地说，PageCache 就是操作系统在内存中给磁盘上的文件建立的缓存。无论我们使用什么语言编写的程序，在调用系统的 API 读写文件的时候，并不会直接去读写磁盘上的文件，应用程序实际操作的都是 PageCache，也就是文件在内存中缓存的副本。</p>
+<p>应用程序在写入文件的时候，操作系统会先把数据写入到内存中的 PageCache，然后再一批一批地写到磁盘上。读取文件的时候，也是从 PageCache 中来读取数据，这时候会出现两种可能情况。</p>
+<p>一种是 PageCache 中有数据，那就直接读取，这样就节省了从磁盘上读取数据的时间；另一种情况是，PageCache 中没有数据，这时候操作系统会引发一个缺页中断，应用程序的读取线程会被阻塞，操作系统把数据从文件中复制到 PageCache 中，然后应用程序再从 PageCache 中继续把数据读出来，这时会真正读一次磁盘上的文件，这个读的过程就会比较慢。</p>
+<p>用户的应用程序在使用完某块 PageCache 后，操作系统并不会立刻就清除这个 PageCache，而是尽可能地利用空闲的物理内存保存这些 PageCache，除非系统内存不够用，操作系统才会清理掉一部分 PageCache。清理的策略一般是 LRU 或它的变种算法，这个算法我们不展开讲，它保留 PageCache 的逻辑是：优先保留最近一段时间最常使用的那些 PageCache。</p>
+<p>Kafka 在读写消息文件的时候，充分利用了 PageCache 的特性。一般来说，消息刚刚写入到服务端就会被消费，按照 LRU 的“优先清除最近最少使用的页”这种策略，读取的时候，对于这种刚刚写入的 PageCache，命中的几率会非常高。</p>
+<p>也就是说，大部分情况下，消费读消息都会命中 PageCache，带来的好处有两个：一个是读取的速度会非常快，另外一个是，给写入消息让出磁盘的 IO 资源，间接也提升了写入的性能。</p>
+<h5 id="5-ZeroCopy：零拷贝技术"><a href="#5-ZeroCopy：零拷贝技术" class="headerlink" title="5. ZeroCopy：零拷贝技术"></a>5. ZeroCopy：零拷贝技术</h5><p>  零拷贝技术是一种避免CPU将数据从一块存储拷贝到另一块存储的技术。Kafka使用零拷贝技术将数据直接从磁盘复制到网卡设备缓冲区中，而不需要经过应用程序的转发。<br>  通常应用程序将磁盘上的数据传送至网卡需要经过4步：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-bullet">1.</span> 调用read()，将数据从磁盘复制到内核模式的缓冲区；<br><span class="hljs-bullet">2.</span> CPU会将数据从内核模式复制到用户模式下的缓冲区；<br><span class="hljs-bullet">3.</span> 调用write()，将数据从用户模式下复制到内核模式下的Socket缓冲区；<br><span class="hljs-bullet">4.</span> 将数据从内核模式的Socket缓冲区复制到网卡设备。<br></code></pre></td></tr></table></figure>
+
+<p>  上面的步骤中，第2、3步将数据从内核模式经过用户模式再绕回内核模式，浪费了两次复制过程。采用零拷贝技术，Kafka可以直接请求内核把磁盘中的数据复制到Socket缓冲区，而不用再经过用户模式。</p>
+<h5 id="6-日志分段存储"><a href="#6-日志分段存储" class="headerlink" title="6. 日志分段存储"></a>6. 日志分段存储</h5><p>  为了防止日志（Log）过大，Kafka引入了日志分段（LogSegment）的概念，将日志切分成多个日志分段。在磁盘上，日志是一个目录，每个日志分段对应于日志目录下的日志文件、偏移量索引文件、时间戳索引文件（可能还有其他文件）。<br>  向日志中追加消息是顺序写入的，只有最后一个日志分段才能执行写入操作，之前所有的日志分段都不能写入数据。<br>  为了便于检索，每个日志分段都有两个索引文件：偏移量索引文件和时间戳索引文件。每个日志分段都有一个基准偏移量baseOffset，用来表示当前日志分段中第一条消息的offset。偏移量索引文件和时间戳索引文件是以稀疏索引的方式构造的，偏移量索引文件中的偏移量和时间戳索引文件中的时间戳都是严格单调递增的。查询指定偏移量（或时间戳）时，使用二分查找快速定位到偏移量（或时间戳）的位置。可见Kafka中对消息的查找速度还是非常快的。</p>
+<h5 id="kafka存储模型"><a href="#kafka存储模型" class="headerlink" title="kafka存储模型"></a>kafka存储模型</h5><h5 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h5><p>Kafka节点上，一个Partition对应一个磁盘目录，命名为_，分为多个LogSegment，一个LogSegment，一个LogSegment对应磁盘上一个日志文件和一个索引文件，日志文件命名规则为[baseOffset].log，baseOffset是日志文件中第一条消息的offset。</p>
+<p>写入时数据直接append到文件末尾，所以不管文件多大，写入总是O(1)的时间复杂度。</p>
+<p><img src="https://pic2.zhimg.com/80/v2-720b48c75b7a04c89452084c0c0d145d_1440w.webp" srcset="/img/loading.gif" lazyload alt="img"></p>
+<h5 id="索引文件"><a href="#索引文件" class="headerlink" title="索引文件"></a>索引文件</h5><p>索引是分段和稀疏索引的方式，二分查找定位日志位点，返回低位点。和日志不同，索引文件因为比较小，用mmap的方式操作，速度很快。</p>
+<p><img src="https://pic3.zhimg.com/80/v2-38c2ed40892d07bab47c02d7a554e296_1440w.webp" srcset="/img/loading.gif" lazyload alt="img"></p>
+<h5 id="-1"><a href="#-1" class="headerlink" title=""></a></h5><h5 id="7-Kafka线程模型"><a href="#7-Kafka线程模型" class="headerlink" title="7. Kafka线程模型"></a>7. Kafka线程模型</h5><p>1(Acceptor) + N(Processor) + M(KafkaRequestHandler)，在Netty，Tomcat，Nginx上面都能看见类似的设计</p>
+<p>N &#x3D; num.networker.threads</p>
+<p>M &#x3D; num.io.threads</p>
+<p>一个EndPoint(网卡)对于一个Acceptor，一般来说就一个</p>
+<p><img src="https://pic4.zhimg.com/80/v2-0f860c6481476ae796fa067a19cb70c3_1440w.webp" srcset="/img/loading.gif" lazyload alt="img"></p>
+<h5 id="-2"><a href="#-2" class="headerlink" title=""></a></h5>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Kafka/" class="print-no-link">#Kafka</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>kafka是如何做到高性能的</div>
+      <div>http://example.com/2023/01/08/Kafka 是如何做到这么高的性能的/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>January 8, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/28/kafka%20partiton%E4%B8%AD%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" title="kafka partition中文件存储">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">kafka partition中文件存储</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/11/02/24%20MySQL%E6%98%AF%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E4%B8%BB%E5%A4%87%E4%B8%80%E8%87%B4%E7%9A%84%EF%BC%9F/" title="mysql binlog学习">
+                        <span class="hidden-mobile">mysql binlog学习</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

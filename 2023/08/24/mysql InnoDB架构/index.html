@@ -1,0 +1,642 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在介绍之前先来看看InnoDB的架构图：  InnoDB内存结构主要由两部分组成：Buffer Pool和 Redo LogBuffer。 1.Buffer Pool缓冲池作用BufferPool 作为内存中的一块区域，在Innodb访问表的时候会将数据页和索引页缓存到缓冲池中。Innodb不管是主键索引还是辅助索引都是以页为单位存储在磁盘空间中的。 当Innodb访问某个页的数据时候，会先把这个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql InnoDB架构">
+<meta property="og:url" content="http://example.com/2023/08/24/mysql%20InnoDB%E6%9E%B6%E6%9E%84/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在介绍之前先来看看InnoDB的架构图：  InnoDB内存结构主要由两部分组成：Buffer Pool和 Redo LogBuffer。 1.Buffer Pool缓冲池作用BufferPool 作为内存中的一块区域，在Innodb访问表的时候会将数据页和索引页缓存到缓冲池中。Innodb不管是主键索引还是辅助索引都是以页为单位存储在磁盘空间中的。 当Innodb访问某个页的数据时候，会先把这个">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://oss-emcsprod-public.modb.pro/wechatSpider/modb_20210223_e8f2f28c-75ab-11eb-93b0-5254001c05fe.png">
+<meta property="article:published_time" content="2023-08-24T14:38:02.000Z">
+<meta property="article:modified_time" content="2024-02-11T06:37:01.279Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://oss-emcsprod-public.modb.pro/wechatSpider/modb_20210223_e8f2f28c-75ab-11eb-93b0-5254001c05fe.png">
+  
+  
+  
+  <title>mysql InnoDB架构 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="mysql InnoDB架构"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-08-24 22:38" pubdate>
+          August 24, 2023 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.2k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          44 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">mysql InnoDB架构</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在介绍之前先来看看InnoDB的架构图：</p>
+<p><img src="https://oss-emcsprod-public.modb.pro/wechatSpider/modb_20210223_e8f2f28c-75ab-11eb-93b0-5254001c05fe.png" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>InnoDB内存结构主要由两部分组成：<strong>Buffer Pool和 Redo LogBuffer。</strong></p>
+<h5 id="1-Buffer-Pool缓冲池作用"><a href="#1-Buffer-Pool缓冲池作用" class="headerlink" title="1.Buffer Pool缓冲池作用"></a>1.Buffer Pool缓冲池作用</h5><p>BufferPool 作为内存中的一块区域，在Innodb访问表的时候会将数据页和索引页缓存到缓冲池中。Innodb不管是主键索引还是辅助索引都是以页为单位存储在磁盘空间中的。</p>
+<p>当Innodb访问某个页的数据时候，会先把这个页整体加载到缓冲池中，然后在进行读写操作。在操作执行完毕后，也不会立即删除将这个页缓冲从缓冲池中删除，而是将它缓存起来，这样当下次再有操作访问这个页时，会直接从缓冲池获取，这样省去了磁盘IO开销，加快了数据访问速度。</p>
+<p>tip：在MySQL专用服务器上，通常将75％以上的物理内存分配给缓冲池，可以通过参数 <strong>innodb_buffer_pool_size</strong>控制缓冲池的大小。因为Buffer Pool中页的大小和数据文件上页大小是一样的，都是16K,而操作系统一次加载数据为4k,所以一般读取时候会将周围数据都取出来，避免重复io,一般认为一个数据被查找，那么它周围数据查找的几率也是很大的</p>
+<p><strong>LRU淘汰策略</strong> 毕竟缓存区大小是有限制的，不能数据一直存放在缓冲区中，所以就涉及到如何高效的清理，那么LRU淘汰算法就出来了，这里简单介绍LRU<strong>（最近经常使用在链表头部，不经常使用在尾部，内存不够的时候删除尾部数据）</strong>，普通的LRU有很多问题，所以mysql中的LRU会做一些更改，一般都会优化下LRU，redis中更不用说了，也是应用了LRU。</p>
+<p>LRU链表（lru）：LRU链表中保存着所有加载到Buffer Pool的数据页和索引页。按照最近最少使用的原则，最近使用的排在链表的头部，最近最少使用排在链表尾部。当Buffer Pool空间没有空闲页可用时，就从LRU链表尾部淘汰一些缓存页，经过淘汰之后，LRU头部就 保存的是热点数据。</p>
+<p>LRU链表不是传统的LRU链表，InnoDB对LRU做了优化，将LRU链表分成了yong区（5&#x2F;8）和old区（3&#x2F;8）。这个比例可以通过参数innodb_old_blocks_pct调节，默认值37，代表old区占比37%。</p>
+<p>young区：存储使用频率非常高的缓存页，这一部分链表也叫做热数据。old区：存储使用频率不是很高的缓存页，所以这一部分链表也叫做冷数据。</p>
+<p>这时因为数据库预读和扫描全表，可以会将使用率不高或者不一定会使用到的页面加载到缓存中。如果将这些页直接插入到LRU链表的头部，热数据就会被排挤到LRU的尾部，就有可能把使用频率非常高的页 淘汰掉，会出现”劣币驱逐良币”的现象。所以当InnoDB将页面读入缓冲池时，它首先将其插入old列表的头部，当下次访问这个页面满足一定条件时在将这个页面插入到yong区的头部。满足一定条件是指：最近一次访问页面时间减去首次访问的时间&lt;某个时间间隔。这个时间间隔可以通过innodb_old_blocks_time 参数控制，默认值1s。即第一次和最后一次访问该页面的时间间隔小于 1s时，才会将这个页面插入到yong区的头部。通过这种机制使得预读机制和全表扫描造成的缓存命中率降低的问题得到了遏制，因为之后用不到的预读页面以及全表扫描的页面都只会被放到old区域，不会影响young区域中的缓存页。</p>
+<p>当Buffer Pool空间不够用时，Buffer Pool会使用LRU算法淘汰最近最少使用的页。在MySQL初始化时会将Buffer Pool划分为若干个缓存页。Buffer Pool中维护着多个链表：空闲页链表（free ）：未使用的缓存页。脏页链表（flush）：发生更改的缓存页。</p>
+<p>在架构图上可以看到，Buffer Pool还分布来两部分区域用于Change Buffer和自适应哈希索引。Buffer Pool对于提升读写性能起到了决定性的作用。当我们需要执行一个insert操作时，如果一个表中存在多个索引，这时就需要更新所有的索引树，如果需要更新的索引页在 Buffer Pool 中存在，这时我们直接更新就可以了。但是如果索引页没有在 Buffer Pool 中就需要从磁盘先加载到内存，再对内存的索引页进行操作。在加上有可能发生页分裂，需要更新的索引页就会更多，会需要进行多次的磁盘IO操作，那有没有优化的方式呢？InnoDB采用了Change Buffer的机制。</p>
+<p><strong>自适应哈希索引</strong> 对于缓冲池中的一些热点索引页，InnoDB为了提高这些页的访问速度，会自动在缓冲池中建立一个自适应Hash索引。自适应哈希索引功能可以使用参数innodb_adaptive_hash_index是否开启，默认开 启。</p>
+<h5 id="2-Change-Buffer作用"><a href="#2-Change-Buffer作用" class="headerlink" title="2.Change Buffer作用"></a>2.Change Buffer作用</h5><p>Change Buffer是一种特殊的数据结构，<strong>是针对二级索引（辅助索引）页的更新优化措施。当二级索引 页不在Buffer Pool中，InnoDB会将对二级索引的数据更改操作先暂时缓存在Change Buffer中，稍后当索引页面因为其他读取操作加载到Buffer Pool的时候，会将这些更改操作合并更新到索引页中</strong>。Change Buffer缓存的更改可能由 Insert 、Delete 和 Update操作导致，这样通过合并操作可以减少二级索引的随机IO。Change Buffer的使用可以有效的提升insert，updte，delete的执行速度。步骤：1.二级索引页的DML操作，并且这个索引页页没有在Buffer Pool内，那么把这个操作存入ChangeBuffer。2.那么下一次需要加载这个页面的时候，索引页被加载到Buffer Pool中。Change Buffer内的更改合并到Buffer Pool。3.随后当服务器在空闲的时候，这个更改会刷到磁盘上。</p>
+<p>什么时候将change buffer更新到buffer pool的索引页？索引页加载到缓存池中时在内存中合并更新。<strong>什么时候将buffer pool的脏页更新到磁盘文件中？redo log写满时</strong>；数据库空闲时，由后台线程；数据库正常关闭时。同样change buffer也会在这三种情况同时被更新到磁盘中。</p>
+<h5 id="三、LogBuffer（Redo-Log）"><a href="#三、LogBuffer（Redo-Log）" class="headerlink" title="三、LogBuffer（Redo Log）"></a>三、LogBuffer（Redo Log）</h5><p>InnoDB存储引擎对数据做修改的时候，会先把数据页从磁盘中读到内存中(buffer pool)中，然后在buffer pool中进行修改，那么这个时候buffer pool中的数据页就与磁盘上的数据页内容 不一致，称这个页为dirty page 脏页。</p>
+<p>如果每次insert，update，delete操作完成后，都立即将脏页刷新到磁盘文件上，而一次更新操作可能需要多次磁盘IO，整个操作的IO成本会很高，更新效率就会很低。所以MySQL会将更新先缓存在内存中，当服务器空闲时才会选择将脏页刷新到磁盘中。但是这就会有个问题，如果在脏页落盘之前如果服务器异常关机或者MySQL崩溃宕机，就会造成脏页这些数据的丢失。为了避免这个问题，InnoDB把对页面的修改操作会同时写入一个日志文件持久化到磁盘上，这样当MySQL崩溃重启后，MySQL就会使用这个日志文件执行恢复操作，将更改重新应用到数据文件，实现了更新操作的持久化。这个日志文件就是Redo Log。</p>
+<p>默认情况下，redo log对应的物理文件位于数据库的数据目录下的ib_logfile1和ib_logfile2。</p>
+<p>可以通过下面的参数控制日志文件的存储文件，数量和大小。这 种 日 志 和 磁 盘 配 合 的 整 个 过 程 ， 其 实 就 是 MySQL 里经常说到的WAL 技 术（Write-Ahead Logging），它的关键点就是在写磁盘前，先写日志。如果每一次的更新操作都写入redo log，磁盘IO成本也是比较高的，所以MySQL在内存中专门开辟了一块区域Log Buffer专门保存将要写入redo log的数据，它的大小可以通过参数 innodb_log_buffer_size控制,默认16M。</p>
+<p>show VARIABLES like ‘innodb_change_buffer_max_size’; #默认值25%，允许在不重新启动服务器的情况下修改设置。set GLOBAL innodb_change_buffer_max_size&#x3D;25</p>
+<p>#指定日志文件所在的路径，默认.&#x2F;，表示在数据库的数据目录下。innodb_log_group_home_dir&#x3D;.&#x2F; #指定重做日志文件组中文件的数量，默认2，表示有两个重做日志文件。#两个文件循环写入，一个写满之后才能开始使用另外一个，一般保持2就可以。innodb_log_files_in_group&#x3D;2 #每个重做日志文件的大小，默认48M。innodb_log_file_size&#x3D;16777216</p>
+<p>这 种 日 志 和 磁 盘 配 合 的 整 个 过 程 ， 其 实 就 是 MySQL 里经常说到的WAL 技 术 （Write-Ahead Logging），它的关键点就是在写磁盘前，先写日志。如果每一次的更新操作都写入redo log，磁盘IO成本也是比较高的，所以MySQL在内存中专门开辟了一块区域Log Buffer专门保存将要写入redo log的数据，它的大小可以通过参数 innodb_log_buffer_size控制,默认16M。</p>
+<h5 id="四、什么时候落盘"><a href="#四、什么时候落盘" class="headerlink" title="四、什么时候落盘"></a>四、什么时候落盘</h5><p>Log Buffer写入磁盘的时机，由参数 innodb_flush_log_at_trx_commit 控制，默认是1，表示事 务提交后立即落盘。用户程序写入数据到磁盘文件时，需要调用操作系统的接口，操作系统本身是有缓冲区的，之后依赖操作系统机制不时的将缓存中刷新到磁盘文件中。用户程序可以执行fsync操作将操作系统缓冲区的数据刷入到磁盘文件中。</p>
+<p>0：MySQL每秒一次将数据从log buffer写入日志文件并同时fsync刷新到磁盘中。每次事务提交时，不会立即把 log buffer 里的数据写入到redo log日志文件的。如果MySQL崩溃或者服务器宕机，此时内存里的数据会全部丢失，最多会丢失1秒的事务。1：每次事务提交时，MySQL将数据从log buffer写入日志文件并同时fsync刷新到磁盘中。该模式为系统默认，<strong>MySQL崩溃已经提交的事务不会丢失，要完全符合ACID，必须使用默认设置1</strong>。2：每次事务提交时，MySQL将数据从log buffer写入日志文件，MySQL每秒执行一次fsync操作 将数据同步到磁盘中。每次事务提交时，都会将数据刷新到操作系统缓冲区，可以认为已经持久化磁盘，如果MySQL崩溃 已经提交的事务不会丢失。但是如果服务器宕机或者意外断电，操作系统缓存内的数据会丢失，所 以最多丢失1秒的事务。</p>
+<p>只有设置为1是最安全但是性能消耗的方式，可以真正地保证事务的持久性，但是由于MySQL执行刷新操作 fsync() 是阻塞的，直到完成后才会返回，我们知道写磁盘的速度是很慢的，因此 MySQL 的性能 会明显地下降。0和2的性能最好的模式，综合安全性和性能的考虑，在业务中经常使用的2这种模式，在MySQL异 常重启时不会丢失数据，只有在服务器意外宕机时才会丢失1秒的数据，这种情况几率是很低的， 相对于性能来说，这时可以容忍的。</p>
+<h5 id="五、为什么使用redo-log"><a href="#五、为什么使用redo-log" class="headerlink" title="五、为什么使用redo log"></a>五、为什么使用redo log</h5><p>日志文件也是磁盘文件，为什么不直接更新到数据文件中，而是要先更新到redo log中呢？如果事务提交时，我们需要更新的数据是分散在不同页不同扇区中的，更新数据时需要根据磁盘地址找 到对应的磁道，然后再找到对应的扇区，才能写入数据，这个时间一般需要10ms。一次事务提交的数据 需要多次的磁盘IO交互才能完成，这个是随机IO，读取和写入速度比较慢。而redo log文件是在磁盘中一块连续的区域，<strong>事务提交时</strong>，写入redo log时，我们只要找到找到第一 块扇区，只需要依次向后写入就行，也就是说只需要执行一次磁盘IO操作，这就是顺序IO。<strong>脏页落盘是随机IO，记录日志是顺序IO</strong>，通过使用WAL技术，先将更改操作记录在日志文件中，延迟落 盘，可以提高系统性能。需要注意的是，redo log主要用于崩溃恢复。磁盘中数据文件的数据的更新，仍旧来自于 buffer pool中的脏页落盘。redo log的特点</p>
+<p>1.redo log 是InnoDB存储引擎层产生的，其他存储引擎没有。2.redo log是物理日志，记录的是“某个数据页上的数据做了什么修改”。3.redo log的文件数和大小是固定的，redo一个文件写满后会切换到下一个文件。从第一个文件开 始写，写到最后一个文件就又会回到第一个文件开始循环写。当系统空闲时或者redolog写满时，MySQL会将将redo log前面的数据擦除，对应的数据修改会被同步 到数据文件中。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/mysql/" class="print-no-link">#mysql</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>mysql InnoDB架构</div>
+      <div>http://example.com/2023/08/24/mysql InnoDB架构/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>August 24, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/09/20/%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E5%92%8C%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB(change%20buffer)/" title="mysql 普通索引和唯一索引的区别(change buffer)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">mysql 普通索引和唯一索引的区别(change buffer)</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/08/11/kafka%E7%9A%84%20groupid%20%E4%B8%8E%20auto.offset.reset/" title="kafka的 groupid 与 auto.offset.reset">
+                        <span class="hidden-mobile">kafka的 groupid 与 auto.offset.reset</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

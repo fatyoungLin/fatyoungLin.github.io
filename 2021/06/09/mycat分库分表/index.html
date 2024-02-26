@@ -1,0 +1,907 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="背景由于公司部分项目使用了mycat来做分库分表，所以就花了点时间了解一下mycat 配置下面是mycat主要配置文件    目录 说明    bin mycat命令，启动、重启、停止等   catlet catlet为Mycat的一个扩展功能   conf Mycat 配置信息,重点关注   lib Mycat引用的jar包，Mycat是java开发的   logs 日志文件，包括Mycat启动">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用mycat分库分表">
+<meta property="og:url" content="http://example.com/2021/06/09/mycat%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="背景由于公司部分项目使用了mycat来做分库分表，所以就花了点时间了解一下mycat 配置下面是mycat主要配置文件    目录 说明    bin mycat命令，启动、重启、停止等   catlet catlet为Mycat的一个扩展功能   conf Mycat 配置信息,重点关注   lib Mycat引用的jar包，Mycat是java开发的   logs 日志文件，包括Mycat启动">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://ask.qcloudimg.com/http-save/yehe-5539408/y56e3jms3a.png?imageView2/2/w/1200">
+<meta property="article:published_time" content="2021-06-09T13:06:40.000Z">
+<meta property="article:modified_time" content="2024-02-12T08:01:00.516Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://ask.qcloudimg.com/http-save/yehe-5539408/y56e3jms3a.png?imageView2/2/w/1200">
+  
+  
+  
+  <title>使用mycat分库分表 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="使用mycat分库分表"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-06-09 21:06" pubdate>
+          June 9, 2021 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          88 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">使用mycat分库分表</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h5 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h5><p>由于公司部分项目使用了mycat来做分库分表，所以就花了点时间了解一下mycat</p>
+<h5 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h5><p>下面是mycat主要配置文件</p>
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>bin</td>
+<td>mycat命令，启动、重启、停止等</td>
+</tr>
+<tr>
+<td>catlet</td>
+<td>catlet为Mycat的一个扩展功能</td>
+</tr>
+<tr>
+<td>conf</td>
+<td>Mycat 配置信息,重点关注</td>
+</tr>
+<tr>
+<td>lib</td>
+<td>Mycat引用的jar包，Mycat是java开发的</td>
+</tr>
+<tr>
+<td>logs</td>
+<td>日志文件，包括Mycat启动的日志和运行的日志。</td>
+</tr>
+</tbody></table>
+<p>Mycat的配置文件都在conf目录里面，这里介绍几个常用的文件：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server.xml</td>
+<td>Mycat的配置文件，设置账号、参数等</td>
+</tr>
+<tr>
+<td>schema.xml</td>
+<td>Mycat对应的物理数据库和数据库表的配置</td>
+</tr>
+<tr>
+<td>rule.xml</td>
+<td>Mycat分片（分库分表）规则</td>
+</tr>
+</tbody></table>
+<p>Mycat的架构其实很好理解，Mycat是代理，Mycat后面就是物理数据库。和Web服务器的Nginx类似。对于使用者来说，访问的都是Mycat，不会接触到后端的数据库。<br>我们现在做一个主从、读写分离，简单分表的示例。</p>
+<table>
+<thead>
+<tr>
+<th>服务器</th>
+<th>IP</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mycat</td>
+<td>192.168.0.2</td>
+<td>mycat服务器，连接数据库时，连接此服务器</td>
+</tr>
+<tr>
+<td>database1</td>
+<td>192.168.0.3</td>
+<td>物理数据库1，真正存储数据的数据库</td>
+</tr>
+<tr>
+<td>database2</td>
+<td>192.168.0.4</td>
+<td>物理数据库2，真正存储数据的数据库</td>
+</tr>
+</tbody></table>
+<p>Mycat作为主数据库中间件，肯定是与代码弱关联的，所以代码是不用修改的，使用Mycat后，连接数据库是不变的，默认端口是8066。连接方式和普通数据库一样，如：jdbc:mysql:&#x2F;&#x2F;192.168.0.2:8066&#x2F;</p>
+<p><strong>server.xml</strong></p>
+<p>示例</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">user</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;password&quot;</span>&gt;</span>test<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  <br>    	<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;schemas&quot;</span>&gt;</span>lunch<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  <br>    	<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;readOnly&quot;</span>&gt;</span>false<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span>  <br>		<br>		<span class="hljs-comment">&lt;!-- 表级 DML 权限设置 --&gt;</span><br>		<span class="hljs-comment">&lt;!-- 		</span><br><span class="hljs-comment">		&lt;privileges check=&quot;false&quot;&gt;</span><br><span class="hljs-comment">			&lt;schema name=&quot;TESTDB&quot; dml=&quot;0110&quot; &gt;</span><br><span class="hljs-comment">				&lt;table name=&quot;tb01&quot; dml=&quot;0000&quot;&gt;&lt;/table&gt;</span><br><span class="hljs-comment">				&lt;table name=&quot;tb02&quot; dml=&quot;1111&quot;&gt;&lt;/table&gt;</span><br><span class="hljs-comment">			&lt;/schema&gt;</span><br><span class="hljs-comment">		&lt;/privileges&gt;		</span><br><span class="hljs-comment">		 --&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">user</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>重点关注下面这段，其他默认即可。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>user</td>
+<td>用户配置节点</td>
+</tr>
+<tr>
+<td>–name</td>
+<td>登录的用户名，也就是连接Mycat的用户名</td>
+</tr>
+<tr>
+<td>–password</td>
+<td>登录的密码，也就是连接Mycat的密码</td>
+</tr>
+<tr>
+<td>–schemas</td>
+<td>数据库名，这里会和schema.xml中的配置关联，多个用逗号分开，例如需要这个用户需要管理两个数据库db1,db2，则配置db1,dbs</td>
+</tr>
+<tr>
+<td>–privileges</td>
+<td>配置用户针对表的增删改查的权限，具体见文档吧</td>
+</tr>
+</tbody></table>
+<p>我这里配置了一个账号test 密码也是test,针对数据库lunch,读写权限都有，没有针对表做任何特殊的权限。</p>
+<p><strong>schema.xml</strong><br>schema.xml是最主要的配置项，首先看我的配置文件。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span>?&gt;</span><br><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">mycat</span>:schema <span class="hljs-keyword">SYSTEM</span> <span class="hljs-string">&quot;schema.dtd&quot;</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">mycat:schema</span> <span class="hljs-attr">xmlns:mycat</span>=<span class="hljs-string">&quot;http://io.mycat/&quot;</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 数据库配置，与server.xml中的数据库对应 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">schema</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunch&quot;</span> <span class="hljs-attr">checkSQLschema</span>=<span class="hljs-string">&quot;false&quot;</span> <span class="hljs-attr">sqlMaxLimit</span>=<span class="hljs-string">&quot;100&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunchmenu&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;restaurant&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;userlunch&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;users&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dictionary&quot;</span> <span class="hljs-attr">primaryKey</span>=<span class="hljs-string">&quot;id&quot;</span> <span class="hljs-attr">autoIncrement</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1,dn2&quot;</span>  <span class="hljs-attr">rule</span>=<span class="hljs-string">&quot;mod-long&quot;</span> /&gt;</span><br><br>		<br>	<span class="hljs-tag">&lt;/<span class="hljs-name">schema</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 分片配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dn1&quot;</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">database</span>=<span class="hljs-string">&quot;lunch&quot;</span> /&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dn2&quot;</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">&quot;test2&quot;</span> <span class="hljs-attr">database</span>=<span class="hljs-string">&quot;lunch&quot;</span> /&gt;</span><br><br><span class="hljs-comment">&lt;!-- 物理数据库配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">&quot;1000&quot;</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">&quot;10&quot;</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">&quot;0&quot;</span>  <span class="hljs-attr">writeType</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">&quot;mysql&quot;</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">&quot;native&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>select user();<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostM1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.2:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test2&quot;</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">&quot;1000&quot;</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">&quot;10&quot;</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">writeType</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">&quot;mysql&quot;</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">&quot;native&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>select user();<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostS1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.3:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">mycat:schema</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>schema</td>
+<td>数据库设置，此数据库为逻辑数据库，name与server.xml中schema对应</td>
+</tr>
+<tr>
+<td>dataNode</td>
+<td>分片信息，也就是分库相关配置</td>
+</tr>
+<tr>
+<td>dataHost</td>
+<td>物理数据库，真正存储数据的数据库</td>
+</tr>
+</tbody></table>
+<p>每个节点的属性逐一说明：</p>
+<p><strong>schema:</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>逻辑数据库名，与server.xml中的schema对应</td>
+</tr>
+<tr>
+<td>checkSQLschema</td>
+<td>数据库前缀相关设置，建议看文档，这里暂时设为folse</td>
+</tr>
+<tr>
+<td>sqlMaxLimit</td>
+<td>select 时默认的limit，避免查询全表</td>
+</tr>
+</tbody></table>
+<p><strong>table:</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>表名，物理数据库中表名</td>
+</tr>
+<tr>
+<td>dataNode</td>
+<td>表存储到哪些节点，多个节点用逗号分隔。节点为下文dataNode设置的name</td>
+</tr>
+<tr>
+<td>primaryKey</td>
+<td>主键字段名，自动生成主键时需要设置</td>
+</tr>
+<tr>
+<td>autoIncrement</td>
+<td>是否自增</td>
+</tr>
+<tr>
+<td>rule</td>
+<td>分片规则名，具体规则下文rule详细介绍</td>
+</tr>
+</tbody></table>
+<p><strong>dataNode</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>节点名，与table中dataNode对应</td>
+</tr>
+<tr>
+<td>datahost</td>
+<td>物理数据库名，与datahost中name对应</td>
+</tr>
+<tr>
+<td>database</td>
+<td>物理数据库中数据库名</td>
+</tr>
+</tbody></table>
+<p><strong>dataHost</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>物理数据库名，与dataNode中dataHost对应</td>
+</tr>
+<tr>
+<td>balance</td>
+<td>均衡负载的方式</td>
+</tr>
+<tr>
+<td>writeType</td>
+<td>写入方式</td>
+</tr>
+<tr>
+<td>dbType</td>
+<td>数据库类型</td>
+</tr>
+<tr>
+<td>heartbeat</td>
+<td>心跳检测语句，注意语句结尾的分号要加。</td>
+</tr>
+</tbody></table>
+<h5 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h5><h5 id="数据库分表分库"><a href="#数据库分表分库" class="headerlink" title="数据库分表分库"></a>数据库分表分库</h5><p>配置如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span>?&gt;</span><br><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">mycat</span>:schema <span class="hljs-keyword">SYSTEM</span> <span class="hljs-string">&quot;schema.dtd&quot;</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">mycat:schema</span> <span class="hljs-attr">xmlns:mycat</span>=<span class="hljs-string">&quot;http://io.mycat/&quot;</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 数据库配置，与server.xml中的数据库对应 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">schema</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunch&quot;</span> <span class="hljs-attr">checkSQLschema</span>=<span class="hljs-string">&quot;false&quot;</span> <span class="hljs-attr">sqlMaxLimit</span>=<span class="hljs-string">&quot;100&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunchmenu&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;restaurant&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;userlunch&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;users&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dictionary&quot;</span> <span class="hljs-attr">primaryKey</span>=<span class="hljs-string">&quot;id&quot;</span> <span class="hljs-attr">autoIncrement</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1,dn2&quot;</span>  <span class="hljs-attr">rule</span>=<span class="hljs-string">&quot;mod-long&quot;</span> /&gt;</span><br><br>		<br>	<span class="hljs-tag">&lt;/<span class="hljs-name">schema</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 分片配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dn1&quot;</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">database</span>=<span class="hljs-string">&quot;lunch&quot;</span> /&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dn2&quot;</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">&quot;test2&quot;</span> <span class="hljs-attr">database</span>=<span class="hljs-string">&quot;lunch&quot;</span> /&gt;</span><br><br><span class="hljs-comment">&lt;!-- 物理数据库配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">&quot;1000&quot;</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">&quot;10&quot;</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">&quot;0&quot;</span>  <span class="hljs-attr">writeType</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">&quot;mysql&quot;</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">&quot;native&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>select user();<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostM1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.2:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test2&quot;</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">&quot;1000&quot;</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">&quot;10&quot;</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">writeType</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">&quot;mysql&quot;</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">&quot;native&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>select user();<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostS1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.3:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">mycat:schema</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>我在192.168.0.2、192.168.0.3均有数据库lunch。<br>lunchmenu、restaurant、userlunch、users这些表都只写入节点dn1，也就是192.168.0.2这个服务，而dictionary写入了dn1、dn2两个节点，也就是192.168.0.2、192.168.0.3这两台服务器。分片的规则为：mod-long。<br>主要关注rule属性，rule属性的内容来源于rule.xml这个文件，Mycat支持10种分表分库的规则，基本能满足你所需要的要求，这个必须赞一个，其他数据库中间件好像都没有这么多。<br>table中的rule属性对应的就是rule.xml文件中tableRule的name,具体有哪些分表和分库的实现，建议还是看下文档。我这里选择的mod-long就是将数据平均拆分。因为我后端是两台物理库，所以rule.xml中mod-long对应的function count为2，见下面部分代码：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-tag">&lt;<span class="hljs-name">tableRule</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;mod-long&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">rule</span>&gt;</span><br>			<span class="hljs-tag">&lt;<span class="hljs-name">columns</span>&gt;</span>id<span class="hljs-tag">&lt;/<span class="hljs-name">columns</span>&gt;</span><br>			<span class="hljs-tag">&lt;<span class="hljs-name">algorithm</span>&gt;</span>mod-long<span class="hljs-tag">&lt;/<span class="hljs-name">algorithm</span>&gt;</span><br>		<span class="hljs-tag">&lt;/<span class="hljs-name">rule</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">tableRule</span>&gt;</span><br>	<br><span class="hljs-tag">&lt;<span class="hljs-name">function</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;mod-long&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;io.mycat.route.function.PartitionByMod&quot;</span>&gt;</span><br>		<span class="hljs-comment">&lt;!-- how many data nodes --&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">property</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;count&quot;</span>&gt;</span>2<span class="hljs-tag">&lt;/<span class="hljs-name">property</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">function</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<h5 id="数据库读写分离"><a href="#数据库读写分离" class="headerlink" title="数据库读写分离"></a>数据库读写分离</h5><p>配置如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span>?&gt;</span><br><span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-keyword">mycat</span>:schema <span class="hljs-keyword">SYSTEM</span> <span class="hljs-string">&quot;schema.dtd&quot;</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">mycat:schema</span> <span class="hljs-attr">xmlns:mycat</span>=<span class="hljs-string">&quot;http://io.mycat/&quot;</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 数据库配置，与server.xml中的数据库对应 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">schema</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunch&quot;</span> <span class="hljs-attr">checkSQLschema</span>=<span class="hljs-string">&quot;false&quot;</span> <span class="hljs-attr">sqlMaxLimit</span>=<span class="hljs-string">&quot;100&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;lunchmenu&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;restaurant&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;userlunch&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;users&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">table</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dictionary&quot;</span> <span class="hljs-attr">primaryKey</span>=<span class="hljs-string">&quot;id&quot;</span> <span class="hljs-attr">autoIncrement</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">dataNode</span>=<span class="hljs-string">&quot;dn1&quot;</span>  /&gt;</span><br><br>		<br>	<span class="hljs-tag">&lt;/<span class="hljs-name">schema</span>&gt;</span><br><br><span class="hljs-comment">&lt;!-- 分片配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataNode</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;dn1&quot;</span> <span class="hljs-attr">dataHost</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">database</span>=<span class="hljs-string">&quot;lunch&quot;</span> /&gt;</span><br><br><br><span class="hljs-comment">&lt;!-- 物理数据库配置 --&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">dataHost</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;test1&quot;</span> <span class="hljs-attr">maxCon</span>=<span class="hljs-string">&quot;1000&quot;</span> <span class="hljs-attr">minCon</span>=<span class="hljs-string">&quot;10&quot;</span> <span class="hljs-attr">balance</span>=<span class="hljs-string">&quot;1&quot;</span>  <span class="hljs-attr">writeType</span>=<span class="hljs-string">&quot;0&quot;</span> <span class="hljs-attr">dbType</span>=<span class="hljs-string">&quot;mysql&quot;</span> <span class="hljs-attr">dbDriver</span>=<span class="hljs-string">&quot;native&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">heartbeat</span>&gt;</span>select user();<span class="hljs-tag">&lt;/<span class="hljs-name">heartbeat</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">writeHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostM1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.2:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;<span class="hljs-name">readHost</span> <span class="hljs-attr">host</span>=<span class="hljs-string">&quot;hostM1&quot;</span> <span class="hljs-attr">url</span>=<span class="hljs-string">&quot;192.168.0.3:3306&quot;</span> <span class="hljs-attr">user</span>=<span class="hljs-string">&quot;root&quot;</span> <span class="hljs-attr">password</span>=<span class="hljs-string">&quot;123456&quot;</span>&gt;</span>	<br>		<span class="hljs-tag">&lt;/<span class="hljs-name">readHost</span>&gt;</span><br>		<span class="hljs-tag">&lt;/<span class="hljs-name">writeHost</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">dataHost</span>&gt;</span><br><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">mycat:schema</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>这样的配置与前一个示例配置改动如下：<br>删除了table分配的规则,以及datanode只有一个<br>datahost也只有一台，但是writehost总添加了readhost,balance改为1，表示读写分离。<br>以上配置达到的效果就是102.168.0.2为主库，192.168.0.3为从库。</p>
+<p>注意：<strong>Mycat主从分离只是在读的时候做了处理，写入数据的时候，只会写入到writehost，需要通过mycat的主从复制将数据复制到readhos</strong>t，这个问题当时候我纠结了好久，数据写入writehost后，readhost一直没有数据，以为是自己配置的问题，后面才发现Mycat就没有实现主从复制的功能，毕竟数据库本身自带的这个功能才是最高效稳定的。</p>
+<blockquote>
+<p>至于其他的场景，如同时主从和分表分库也是支持的了，只要了解这个实现以后再去修改配置，都是可以实现的。而热备及故障专业官方推荐使用haproxy配合一起使用，大家可以试试。</p>
+<p><img src="https://ask.qcloudimg.com/http-save/yehe-5539408/y56e3jms3a.png?imageView2/2/w/1200" srcset="/img/loading.gif" lazyload alt="img"></p>
+</blockquote>
+<h5 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h5><p>Mycat的启动也很简单，启动命令在Bin目录：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">#启动</span></span><br>mycat start<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">#停止</span></span><br>mycat stop<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">#</span><span class="language-bash"><span class="hljs-comment">#重启</span></span><br>mycat restart<br></code></pre></td></tr></table></figure>
+
+<p>如果在启动时发现异常，在logs目录中查看日志。</p>
+<ul>
+<li>wrapper.log 为程序启动的日志，启动时的问题看这个</li>
+<li>mycat.log 为脚本执行时的日志，SQL脚本执行报错后的具体错误内容,查看这个文件。mycat.log是最新的错误日志，历史日志会根据时间生成目录保存。</li>
+</ul>
+<p>mycat启动后，执行命令不成功，可能实际上配置有错误，导致后面的命令没有很好的执行。</p>
+<p>Mycat带来的最大好处就是使用是完全不用修改原有代码的，在mycat通过命令启动后，你只需要将数据库连接切换到Mycat的地址就可以了。如下面就可以进行连接了：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">mysql <span class="hljs-operator">-</span>h192<span class="hljs-number">.168</span><span class="hljs-number">.0</span><span class="hljs-number">.1</span> <span class="hljs-operator">-</span>P8806 <span class="hljs-operator">-</span>uroot <span class="hljs-operator">-</span>p123456<br></code></pre></td></tr></table></figure>
+
+<p>连接成功后可以执行sql脚本了。<br>所以，可以直接通过sql管理工具（如：navicat、datagrip）连接，执行脚本。我一直用datagrip来进行日常简单的管理，这个很方便。</p>
+<p>Mycat还有一个管理的连接，端口号是9906.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">mysql <span class="hljs-operator">-</span>h192<span class="hljs-number">.168</span><span class="hljs-number">.0</span><span class="hljs-number">.1</span> <span class="hljs-operator">-</span>P9906 <span class="hljs-operator">-</span>uroot <span class="hljs-operator">-</span>p123456<br></code></pre></td></tr></table></figure>
+
+<p>连接后可以根据管理命令查看Mycat的运行情况，当然，喜欢UI管理方式的人，可以安装一个Mycat-Web来进行管理，有兴趣自行搜索。</p>
+<p>简而言之，开发中使用Mycat和直接使用Mysql机会没有差别。</p>
+<h5 id="myCat查询原理"><a href="#myCat查询原理" class="headerlink" title="myCat查询原理"></a>myCat查询原理</h5><blockquote>
+<p><strong>核心原理：</strong><br> a、非分片关键字（取模的字段）查询会搜索所有的分库分表，结果归并后按照sql语句排序返回，如果未设置排序，则按分库随机返回结果<br> b、分片关键字查询会直接定位到对应的分库，执行相应的sql语句返回结果。</p>
+</blockquote>
+<p>以求模分片方式为例验证：<br> 修改&#x2F;usr&#x2F;local&#x2F;mycat&#x2F;conf&#x2F;log4j2.xml日志级别为debug，即可查询查询语句。</p>
+<h5 id="1-非分片关键字查询，则会读取所有分片中的结果，然后按sql需求返回。"><a href="#1-非分片关键字查询，则会读取所有分片中的结果，然后按sql需求返回。" class="headerlink" title="1.非分片关键字查询，则会读取所有分片中的结果，然后按sql需求返回。"></a>1.非分片关键字查询，则会读取所有分片中的结果，然后按sql需求返回。</h5><p>![image-20230603160350838](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20230603160350838.png)</p>
+<h5 id="2-分片关键字查询，则直接读取所在库。"><a href="#2-分片关键字查询，则直接读取所在库。" class="headerlink" title="2.分片关键字查询，则直接读取所在库。"></a>2.分片关键字查询，则直接读取所在库。</h5><p>![image-20230603160406237](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20230603160406237.png)</p>
+<p>（<strong>如果是C端，一般不存在全量查询，所以比较适合mycat，但如果是后台数据报表的需求，很多全量查询的话，性能就不好了</strong>）</p>
+<h5 id="mycat缺点"><a href="#mycat缺点" class="headerlink" title="mycat缺点"></a>mycat缺点</h5><p>1、<code>Mycat</code>单库分表需要准备空白表，提前制定好分表规则。</p>
+<p>分表的时候使用到了该字段作为分表字段，数据会按照制定好的分表规则存入不同的数据库或表里面。<code>Mycat</code>中是不允许修改作为分表依据的列的，所以更新是需要去掉此列。</p>
+<p>2、非关键字查询</p>
+<p>3、由于读写分离后，从数据库的数据可能与主数据库的数据不一致，因此需要特别关注数据一致性问题。</p>
+<p>![image-20230603163618803](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20230603163618803.png)（可以用注解的方式强制走主库）</p>
+<h5 id="与sharding-jdbc的区别"><a href="#与sharding-jdbc的区别" class="headerlink" title="与sharding jdbc的区别"></a>与sharding jdbc的区别</h5><p><strong>相同点：</strong></p>
+<p>a、设计理念相同，主流程都是SQL解析–&gt;SQL路由–&gt;SQL改写–&gt;SQL执行–&gt;结果归并</p>
+<p>b、查询的原理一致，非分片字段查询都会查询所有分片然后结果归并，分片字段查询则直接搜索分片数据库查询。</p>
+<p><strong>不同点：</strong></p>
+<p>他们类似于SpringCloud Ribbon与Nginx区别。</p>
+<p>Mycat是基于Proxy，类似于nginx，它复写了MySQL协议，将MycatServer伪装成一个MySQL数据库。优点是保证数据库的安全性，归并数据结果完全解耦，缺点是效率偏低。</p>
+<p>Sharding-JDBC是基于JDBC的扩展，是以jar包的形式提供轻量级服务的。优点是效率较高，缺点是归并数据结果没有实现解耦，有可能会影响到我们业务逻辑代码。还容易内存溢出，所以要做分页处理。</p>
+<p>MyCat是一个第三方服务器端数据库中间件，客户端所有的jdbc请求都必须要先交给MyCat，再有MyCat转发到具体的真实服务器中。<br>Sharding-Jdbc是一个本地数据库中间件框架，采用Jar形式，在本地应用层重写Jdbc原生的方法，实现数据库分片形式。</p>
+<h5 id="sharding-jdbc工作原理"><a href="#sharding-jdbc工作原理" class="headerlink" title="sharding jdbc工作原理"></a>sharding jdbc工作原理</h5><p>以下是 Sharding JDBC 的一般工作原理：</p>
+<ol>
+<li>数据源路由：Sharding JDBC 通过数据源路由功能，将 SQL 语句路由到相应的数据源（数据库实例）。路由的规则通常基于某种分片策略，比如按照分片键的哈希值或范围进行路由。这样可以将数据分散存储在不同的数据库实例中。</li>
+<li>SQL 解析和执行：Sharding JDBC 在收到 SQL 语句后，会解析其中涉及的表名、字段等信息，然后根据配置的分片规则决定具体的路由目标。接着，它会将 SQL 语句发送到对应的数据源执行，并将结果合并返回给应用程序。</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/mysql/" class="print-no-link">#mysql</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>使用mycat分库分表</div>
+      <div>http://example.com/2021/06/09/mycat分库分表/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>June 9, 2021</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/01/11/02_%E6%97%A5%E5%BF%97%E7%B3%BB%E7%BB%9F%EF%BC%9A%E4%B8%80%E6%9D%A1SQL%E6%9B%B4%E6%96%B0%E8%AF%AD%E5%8F%A5%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84%EF%BC%9F/" title="一条sql更新语句是如何执行的？">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">一条sql更新语句是如何执行的？</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/06/08/%E9%93%BE%E8%A1%A8%E7%8E%AF%E7%9A%84%E5%85%A5%E5%8F%A3/" title="链表环的入口数学原理">
+                        <span class="hidden-mobile">链表环的入口数学原理</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

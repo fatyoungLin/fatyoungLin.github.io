@@ -1,0 +1,724 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=light>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#CDB38B">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="123456789101112131415161718@Servicepublic class A &amp;#123;    @Autowired    private B b;&amp;#125;@Servicepublic class B &amp;#123;    @Autowired    private A a;&amp;#125;&#x2F;&#x2F;或者自己依赖自己@Servicepublic class A &amp;#123;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring循环依赖">
+<meta property="og:url" content="http://example.com/2019/03/12/spring%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="123456789101112131415161718@Servicepublic class A &amp;#123;    @Autowired    private B b;&amp;#125;@Servicepublic class B &amp;#123;    @Autowired    private A a;&amp;#125;&#x2F;&#x2F;或者自己依赖自己@Servicepublic class A &amp;#123;">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://image.z.itpub.net/zitpub.net/JPG/2022-04-15/04A822D642097E97B4992D810B4C1B72.jpg">
+<meta property="og:image" content="https://image.z.itpub.net/zitpub.net/JPG/2022-04-15/C5D3CA3C9918CE4B360C2A4E090ABC15.jpg">
+<meta property="article:published_time" content="2019-03-12T13:12:24.000Z">
+<meta property="article:modified_time" content="2024-02-16T05:03:06.547Z">
+<meta property="article:author" content="John Doe">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://image.z.itpub.net/zitpub.net/JPG/2022-04-15/04A822D642097E97B4992D810B4C1B72.jpg">
+  
+  
+  
+  <title>spring循环依赖 - Hexo</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>fatYoung</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/a.jpg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="spring循环依赖"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2019-03-12 21:12" pubdate>
+          March 12, 2019 pm
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.5k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          38 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">spring循环依赖</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-variable">@Service</span><br>public class A &#123;<br>    <span class="hljs-variable">@Autowired</span><br>    private B b;<br>&#125;<br><br><span class="hljs-variable">@Service</span><br>public class B &#123;<br>    <span class="hljs-variable">@Autowired</span><br>    private A a;<br>&#125;<br><br><span class="hljs-comment">//或者自己依赖自己</span><br><span class="hljs-variable">@Service</span><br>public class A &#123;<br>    <span class="hljs-variable">@Autowired</span><br>    private A a;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>上面这两种方式都是循环依赖，应该很好理解，当然也可以是三个 Bean 甚至更多的 Bean 相互依赖，原理都是一样的。</p>
+<p>这种循环依赖可能会产生问题，例如 A 要依赖 B，发现 B 还没创建。</p>
+<p>于是开始创建 B ，创建的过程发现 B 要依赖 A， 而 A 还没创建好呀，因为它要等 B 创建好。</p>
+<h5 id="Spring-如何解决循环依赖"><a href="#Spring-如何解决循环依赖" class="headerlink" title="Spring 如何解决循环依赖"></a>Spring 如何解决循环依赖</h5><p>上面这种循环依赖在实际场景中是会出现的，所以 Spring 需要解决这个问题，那如何解决呢？</p>
+<p>关键就是提前暴露未完全创建完毕的 Bean。</p>
+<p>在 Spring 中，只有同时满足以下两点才能解决循环依赖的问题：</p>
+<ol>
+<li>依赖的 Bean 必须都是单例</li>
+<li>依赖注入的方式，必须不全是构造器注入，且 beanName 字母序在前的不能是构造器注入</li>
+</ol>
+<h5 id="为什么必须都是单例"><a href="#为什么必须都是单例" class="headerlink" title="为什么必须都是单例"></a>为什么必须都是单例</h5><p>如果从源码来看的话，循环依赖的 Bean 是原型模式，会直接抛错：</p>
+<p><img src="https://image.z.itpub.net/zitpub.net/JPG/2022-04-15/04A822D642097E97B4992D810B4C1B72.jpg" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>所以 Spring 只支持单例的循环依赖，但是为什么呢？</p>
+<p>按照理解，如果两个 Bean 都是原型模式的话。</p>
+<p>那么创建 A1 需要创建一个 B1。</p>
+<p>创建 B1 的时候要创建一个 A2。</p>
+<p>创建 A2 又要创建一个 B2。</p>
+<p>创建 B2 又要创建一个 A3。</p>
+<p>创建 A3 又要创建一个 B3…..</p>
+<p>因为原型模式都需要创建新的对象，不能跟用以前的对象。</p>
+<p>如果是单例的话，创建 A 需要创建 B，而创建的 B 需要的是之前的个 A， 不然就不叫单例了，对吧？</p>
+<p>具体做法就是：先创建 A，此时的 A 是不完整的（没有注入 B），用个 map 保存这个不完整的 A，再创建 B ，B 需要 A。</p>
+<p>所以从那个 map 得到“不完整”的 A，此时的 B 就完整了，然后 A 就可以注入 B，然后 A 就完整了，B 也完整了，且它们是相互依赖的。</p>
+<h5 id="为什么不能全是构造器注入"><a href="#为什么不能全是构造器注入" class="headerlink" title="为什么不能全是构造器注入"></a>为什么不能全是构造器注入</h5><p>在 Spring 中创建 Bean 分三步:</p>
+<ol>
+<li>实例化，createBeanInstance，就是 new 了个对象</li>
+<li>属性注入，populateBean， 就是 set 一些属性值</li>
+<li>初始化，initializeBean，执行一些 aware 接口中的方法，initMethod，AOP代理等</li>
+</ol>
+<p>明确了上面这三点，再结合我上面说的“不完整的”，我们来理一下。</p>
+<p>如果全是构造器注入，比如<code>A(B b)</code>，那表明在 new 的时候，就需要得到 B，此时需要 new B 。</p>
+<p>但是 B 也是要在构造的时候注入 A ，即<code>B(A a)</code>，这时候 B 需要在一个 map 中找到不完整的 A ，发现找不到。</p>
+<p>为什么找不到？因为 A 还没 new 完呢，所以找到不完整的 A，因此如果全是构造器注入的话，那么 Spring 无法处理循环依赖。</p>
+<h5 id="一个set注入，一个构造器注入一定能成功？"><a href="#一个set注入，一个构造器注入一定能成功？" class="headerlink" title="一个set注入，一个构造器注入一定能成功？"></a>一个set注入，一个构造器注入一定能成功？</h5><p>假设我们 A 是通过 set 注入 B，B 通过构造函数注入 A，此时是成功的。</p>
+<p>我们来分析下：实例化 A 之后，可以在 map 中存入 A，开始为 A 进行属性注入，发现需要 B。</p>
+<p>此时 new B，发现构造器需要 A，此时从 map 中得到 A ，B 构造完毕。</p>
+<p>B 进行属性注入，初始化，然后 A 注入 B 完成属性注入，然后初始化 A。</p>
+<p>整个过程很顺利，没毛病。</p>
+<p>假设 A 是通过构造器注入 B，B 通过 set 注入 A，此时是失败的。</p>
+<p>我们来分析下：实例化 A，发现构造函数需要 B， 此时去实例化 B。</p>
+<p>然后进行 B 的属性注入，从 map 里面找不到 A，因为 A 还没 new 成功，所以 B 也卡住了，然后就 gg。</p>
+<p>看到这里，仔细思考的小伙伴可能会说，可以先实例化 B 啊，往 map 里面塞入不完整的 B，这样就能成功实例化 A 了啊。</p>
+<p>确实，思路没错但是 Spring 容器是按照字母序创建 Bean 的，A 的创建永远排在 B 前面。</p>
+<p>现在我们总结一下：</p>
+<ul>
+<li>如果循环依赖都是构造器注入，则失败</li>
+<li>如果循环依赖不完全是构造器注入，则可能成功，可能失败，具体跟BeanName的字母序有关系。</li>
+</ul>
+<h5 id="Spring-解决循环依赖全流程"><a href="#Spring-解决循环依赖全流程" class="headerlink" title="Spring 解决循环依赖全流程"></a>Spring 解决循环依赖全流程</h5><p>明确了 Spring 创建 Bean 的三步骤之后，我们再来看看它为单例搞的三个 map：</p>
+<ol>
+<li>一级缓存，singletonObjects，存储所有已创建完毕的单例 Bean （完整的 Bean）</li>
+<li>二级缓存，earlySingletonObjects，存储所有仅完成实例化，但还未进行属性注入和初始化的 Bean</li>
+<li>三级缓存，singletonFactories，存储能建立这个 Bean 的一个工厂，通过工厂能获取这个 Bean，延迟化 Bean 的生成，工厂生成的 Bean 会塞入二级缓存</li>
+</ol>
+<p>这三个 map 是如何配合的呢？</p>
+<ol>
+<li>首先，获取单例 Bean 的时候会通过 BeanName 先去 singletonObjects（一级缓存） 查找完整的 Bean，如果找到则直接返回，否则进行步骤 2。</li>
+<li>看对应的 Bean 是否在创建中，如果不在直接返回找不到，如果是，则会去 earlySingletonObjects （二级缓存）查找 Bean，如果找到则返回，否则进行步骤 3</li>
+<li>去 singletonFactories （三级缓存）通过 BeanName 查找到对应的工厂，如果存着工厂则通过工厂创建 Bean ，并且放置到 earlySingletonObjects 中。</li>
+<li>如果三个缓存都没找到，则返回 null。</li>
+</ol>
+<p>从上面的步骤我们可以得知，如果查询发现 Bean 还未创建，到第二步就直接返回 null，不会继续查二级和三级缓存。</p>
+<p>返回 null 之后，说明这个 Bean 还未创建，这个时候会标记这个 Bean 正在创建中，然后再调用 createBean 来创建 Bean，而实际创建是调用方法 doCreateBean。</p>
+<p>doCreateBean 这个方法就会执行上面我们说的三步骤：</p>
+<ol>
+<li>实例化</li>
+<li>属性注入</li>
+<li>初始化</li>
+</ol>
+<p>在实例化 Bean 之后，会往 singletonFactories 塞入一个工厂，而调用这个工厂的 getObject 方法，就能得到这个 Bean。</p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs livescript">addSingletonFactory<span class="hljs-function"><span class="hljs-params">(beanName, () -&gt; getEarlyBeanReference(beanName, mbd, bean))</span>;</span><br></code></pre></td></tr></table></figure>
+
+<p>要注意，此时 Spring 是不知道会不会有循环依赖发生的，但是它不管，反正往 singletonFactories 塞这个工厂，这里就是提前暴露。</p>
+<p>然后就开始执行属性注入，这个时候 A 发现需要注入 B，所以去 getBean(B)，此时又会走一遍上面描述的逻辑，到了 B 的属性注入这一步。</p>
+<p>此时 B 调用 getBean(A)，这时候一级缓存里面找不到，但是发现 A 正在创建中的，于是去二级缓存找，发现没找到，于是去三级缓存找，然后找到了。</p>
+<p>并且通过上面提前在三级缓存里暴露的工厂得到 A，然后将这个工厂从三级缓存里删除，并将 A 加入到二级缓存中。</p>
+<p>然后结果就是 B 属性注入成功。</p>
+<p>紧接着 B 调用 initializeBean 初始化，终返回，此时 B 已经被加到了一级缓存里 。</p>
+<p>这时候就回到了 A 的属性注入，此时注入了 B，接着执行初始化，后 A 也会被加到一级缓存里，且从二级缓存中删除 A。</p>
+<p>Spring 解决依赖循环就是按照上面所述的逻辑来实现的。</p>
+<p>重点就是在对象实例化之后，都会在三级缓存里加入一个工厂，提前对外暴露还未完整的 Bean，这样如果被循环依赖了，对方就可以利用这个工厂得到一个不完整的 Bean，破坏了循环的条件。</p>
+<h5 id="为什么循环依赖需要三级缓存，二级不够吗？"><a href="#为什么循环依赖需要三级缓存，二级不够吗？" class="headerlink" title="为什么循环依赖需要三级缓存，二级不够吗？"></a><strong>为什么循环依赖需要三级缓存，二级不够吗？</strong></h5><p>上面都说了那么多了，那我们思考下，解决循环依赖需要三级缓存吗？</p>
+<p>很明显，如果仅仅只是为了破解循环依赖，二级缓存够了，压根就不必要三级。</p>
+<p>你思考一下，在实例化 Bean A 之后，我在二级 map 里面塞入这个 A，然后继续属性注入。</p>
+<p>s发现 A 依赖 B 所以要创建 Bean B，这时候 B 就能从二级 map 得到 A ，完成 B 的建立之后， A 自然而然能完成。</p>
+<p>所以为什么要搞个三级缓存，且里面存的是创建 Bean 的工厂呢？</p>
+<p>我们来看下调用工厂的 getObject 到底会做什么，实际会调用下面这个方法：</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs typescript"><span class="hljs-keyword">protected</span> <span class="hljs-title class_">Object</span> <span class="hljs-title function_">getEarlyBeanReference</span>(<span class="hljs-params"><span class="hljs-built_in">String</span> beanName, RootBeanDefinition mbd, <span class="hljs-built_in">Object</span> bean</span>) &#123;<br>    <span class="hljs-title class_">Object</span> exposedObject = bean;<br>    <span class="hljs-keyword">if</span> (!mbd.<span class="hljs-title function_">isSynthetic</span>() &amp;&amp; <span class="hljs-title function_">hasInstantiationAwareBeanPostProcessors</span>()) &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-title class_">SmartInstantiationAwareBeanPostProcessor</span> bp : <span class="hljs-title function_">getBeanPostProcessorCache</span>().<span class="hljs-property">smartInstantiationAware</span>) &#123;<br>            exposedObject = bp.<span class="hljs-title function_">getEarlyBeanReference</span>(exposedObject, beanName);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> exposedObject;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>重点就在中间的判断，如果 false，返回就是参数传进来的 bean，没任何变化。</p>
+<p>如果是 true 说明有 InstantiationAwareBeanPostProcessors 。</p>
+<p>且循环的是 smartInstantiationAware 类型，如有这个 BeanPostProcessor 说明 Bean 需要被 aop 代理。</p>
+<p>我们都知道如果有代理的话，那么我们想要直接拿到的是代理对象。</p>
+<p>也就是说如果 A 需要被代理，那么 B 依赖的 A 是已经被代理的 A，所以我们不能返回 A 给 B，而是返回代理的 A 给 B。</p>
+<p>这个工厂的作用就是判断这个对象是否需要代理，如果否则直接返回，如果是则返回代理对象。</p>
+<p>那这跟三级缓存有什么关系呢，我可以在要放到二级缓存的时候判断这个 Bean 是否需要代理，如果要直接放代理的对象不就完事儿了。</p>
+<p>这其实跟 Bean 的生命周期有关系。</p>
+<p>正常代理对象的生成是基于后置处理器，是在被代理的对象初始化后期调用生成的，所以如果你提早代理了其实是违背了 Bean 定义的生命周期。</p>
+<p>所以 Spring 先在一个三级缓存放置一个工厂，如果产生循环依赖，那么就调用这个工厂提早得到代理对象。</p>
+<p>如果没产生依赖，这个工厂根本不会被调用，所以 Bean 的生命周期就是对的。</p>
+<p>至此，我想你应该明白为什么会有三级缓存了。</p>
+<p>也明白，其实破坏循环依赖，其实只有二级缓存就够了，但是碍于生命周期的问题，提前暴露工厂延迟代理对象的生成。</p>
+<p>对了，不用担心三级缓存因为没有循环依赖，数据堆积的问题，终单例 Bean 创建完毕都会加入一级缓存，此时会清理下面的二、三级缓存。</p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzUzMTA2NTU2Ng==&mid=2247487551&idx=1&sn=18f64ba49f3f0f9d8be9d1fdef8857d9&scene=21#wechat_redirect"><img src="https://image.z.itpub.net/zitpub.net/JPG/2022-04-15/C5D3CA3C9918CE4B360C2A4E090ABC15.jpg" srcset="/img/loading.gif" lazyload alt="img"></a></p>
+<p>好了，看到这里想必你应该对 Spring 的循环依赖很清晰了，并且面试的时候肯定也难不倒你了。</p>
+<p>我稍微总结下：</p>
+<ul>
+<li>有构造器注入，不一定会产生问题，具体得看是否都是构造器注和 BeanName 的字母序</li>
+<li>如果单纯为了打破循环依赖，不需要三级缓存，两级就够了。</li>
+<li>三级缓存是否为延迟代理的创建，尽量不打破 Bean 的生命周期</li>
+</ul>
+<hr>
+<p>![image-20230603150748062](&#x2F;Users&#x2F;lindinghao&#x2F;Library&#x2F;Application Support&#x2F;typora-user-images&#x2F;image-20230603150748062.png)</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java/" class="print-no-link">#Java</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>spring循环依赖</div>
+      <div>http://example.com/2019/03/12/spring循环依赖/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>John Doe</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>March 12, 2019</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2019/06/05/%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%A4%8D%E7%94%A8%E5%8E%9F%E7%90%86/" title="线程池复用原理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">线程池复用原理</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span> end </span> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

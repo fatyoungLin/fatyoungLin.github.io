@@ -16,15 +16,15 @@
   <meta name="author" content="John Doe">
   <meta name="keywords" content="">
   
-    <meta name="description" content="77 AQS 在 CountDownLatch 等类中的应用原理是什么？本课时我们主要讲解 AQS 在 CountDownLatch 类中的应用原理，即在 CountDownLatch 中如何利用 AQS 去实现 CountDownLatch 自己的线程协作逻辑的。本课时会包含一定的源码分析。 AQS 用法我们先讲一下 AQS 的用法。如果想使用 AQS 来写一个自己的线程协作工具类，通常而言是分">
+    <meta name="description" content="AQS 用法 JDK 里利用 AQS 类的主要步骤：  第一步，新建一个自己的线程协作工具类，在内部写一个 Sync 类，该 Sync 类继承 AbstractQueuedSynchronizer，即 AQS； 第二步，想好设计的线程协作工具类的协作逻辑，在 Sync 类里，根据是否是独占，来重写对应的方法。如果是独占，则重写 tryAcquire 和 tryRelease 等方法；如果是非独占，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AQS 在 CountDownLatch 等类中的应用原理是什么？">
-<meta property="og:url" content="http://example.com/2022/10/13/asd/index.html">
+<meta property="og:url" content="http://example.com/2022/10/13/aqs/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="77 AQS 在 CountDownLatch 等类中的应用原理是什么？本课时我们主要讲解 AQS 在 CountDownLatch 类中的应用原理，即在 CountDownLatch 中如何利用 AQS 去实现 CountDownLatch 自己的线程协作逻辑的。本课时会包含一定的源码分析。 AQS 用法我们先讲一下 AQS 的用法。如果想使用 AQS 来写一个自己的线程协作工具类，通常而言是分">
+<meta property="og:description" content="AQS 用法 JDK 里利用 AQS 类的主要步骤：  第一步，新建一个自己的线程协作工具类，在内部写一个 Sync 类，该 Sync 类继承 AbstractQueuedSynchronizer，即 AQS； 第二步，想好设计的线程协作工具类的协作逻辑，在 Sync 类里，根据是否是独占，来重写对应的方法。如果是独占，则重写 tryAcquire 和 tryRelease 等方法；如果是非独占，">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-10-13T06:34:55.000Z">
-<meta property="article:modified_time" content="2023-10-13T07:07:21.168Z">
+<meta property="article:modified_time" content="2024-02-09T06:19:36.691Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary_large_image">
   
@@ -207,7 +207,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          7.3k words
+          7.1k words
         
       </span>
     
@@ -218,7 +218,7 @@
         
         
         
-          62 mins
+          59 mins
         
       </span>
     
@@ -260,8 +260,7 @@
             
               <div class="markdown-body">
                 
-                <h5 id="77-AQS-在-CountDownLatch-等类中的应用原理是什么？"><a href="#77-AQS-在-CountDownLatch-等类中的应用原理是什么？" class="headerlink" title="77 AQS 在 CountDownLatch 等类中的应用原理是什么？"></a>77 AQS 在 CountDownLatch 等类中的应用原理是什么？</h5><p>本课时我们主要讲解 AQS 在 CountDownLatch 类中的应用原理，即在 CountDownLatch 中如何利用 AQS 去实现 CountDownLatch 自己的线程协作逻辑的。本课时会包含一定的源码分析。</p>
-<h5 id="AQS-用法"><a href="#AQS-用法" class="headerlink" title="AQS 用法"></a>AQS 用法</h5><p>我们先讲一下 AQS 的用法。如果想使用 AQS 来写一个自己的线程协作工具类，通常而言是分为以下三步，这也是 JDK 里<strong>利用 AQS 类的主要步骤</strong>：</p>
+                <h5 id="AQS-用法"><a href="#AQS-用法" class="headerlink" title="AQS 用法"></a>AQS 用法</h5><p> JDK 里<strong>利用 AQS 类的主要步骤</strong>：</p>
 <ul>
 <li><strong>第一步</strong>，新建一个自己的线程协作工具类，在内部写一个 Sync 类，该 Sync 类继承 AbstractQueuedSynchronizer，即 AQS；</li>
 <li><strong>第二步</strong>，想好设计的线程协作工具类的协作逻辑，在 Sync 类里，根据是否是独占，来重写对应的方法。如果是独占，则重写 tryAcquire 和 tryRelease 等方法；如果是非独占，则重写 tryAcquireShared 和 tryReleaseShared 等方法；</li>
@@ -329,7 +328,6 @@
 <p>我们再来看下另一种情况，当 state 如果此时已经等于 0 了，那就意味着倒数其实结束了，不需要再去等待了，就是说门闩是打开状态，所以说此时 getState 返回 0，tryAcquireShared 方法返回 1 ，一旦返回 1，对于 acquireSharedInterruptibly 方法而言相当于立刻返回，也就意味着 await 方法会立刻返回，那么此时<strong>线程就不会进入阻塞状态了</strong>，相当于倒数已经结束，立刻放行了。</p>
 <p>这里的 await 和 countDown 方法，正对应了本讲一开始所介绍的“第三步，在自己的线程协作工具类中，实现获取&#x2F;释放的相关方法，并在里面调用 AQS 对应的方法，如果是独占则调用 acquire 或 release 等方法，非独占则调用 acquireShared 或 releaseShared 或 acquireSharedInterruptibly 等方法。”</p>
 <h5 id="AQS-在-CountDownLatch-的应用总结"><a href="#AQS-在-CountDownLatch-的应用总结" class="headerlink" title="AQS 在 CountDownLatch 的应用总结"></a>AQS 在 CountDownLatch 的应用总结</h5><p>最后对 AQS 在 CountDownLatch 的应用进行总结。当线程调用 CountDownLatch 的 await 方法时，便会尝试获取“共享锁”，不过一开始通常获取不到锁，于是线程被阻塞。“共享锁”可获取到的条件是“锁计数器”的值为 0，而“锁计数器”的初始值为 count，当每次调用 CountDownLatch 对象的 countDown 方法时，也可以把“锁计数器” -1。通过这种方式，调用 count 次 countDown 方法之后，“锁计数器”就为 0 了，于是之前等待的线程就会继续运行了，并且此时如果再有线程想调用 await 方法时也会被立刻放行，不会再去做任何阻塞操作了。</p>
-<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>在本课时中我们主要介绍了 AQS 的用法，通常分为三步，然后以 CountDownLatch 为例，介绍了如何利用 AQS 实现自己的业务逻辑。</p>
 
                 
               </div>
@@ -348,7 +346,7 @@
   <div class="license-box my-3">
     <div class="license-title">
       <div>AQS 在 CountDownLatch 等类中的应用原理是什么？</div>
-      <div>http://example.com/2022/10/13/asd/</div>
+      <div>http://example.com/2022/10/13/aqs/</div>
     </div>
     <div class="license-meta">
       
@@ -392,9 +390,21 @@
                   <article class="post-prev col-6">
                     
                     
+                      <a href="/2022/10/15/B+%E6%A0%91%E6%98%AF%E5%A6%82%E4%BD%95%E8%BF%9B%E8%A1%8C%E6%9F%A5%E8%AF%A2%E7%9A%84/" title="B+树是如何进行查询的">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">B+树是如何进行查询的</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
                   </article>
                   <article class="post-next col-6">
                     
+                    
+                      <a href="/2022/10/04/mysql%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/" title="mysql主从复制">
+                        <span class="hidden-mobile">mysql主从复制</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
                     
                   </article>
                 </div>

@@ -208,15 +208,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/10/13/asd/" target="_self">
-          AQS 在 CountDownLatch 等类中的应用原理是什么？
+        <a href="/2023/11/01/Kafka%20%E4%B8%AD%E7%9A%84%E5%86%85%E9%83%A8%E4%B8%BB%E9%A2%98%EF%BC%88Internal%20Topic%EF%BC%89__consumer_offsets%E3%80%82/" target="_self">
+          Kafka 中的内部主题（Internal Topic）__consumer_offsets。
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/10/13/asd/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/01/Kafka%20%E4%B8%AD%E7%9A%84%E5%86%85%E9%83%A8%E4%B8%BB%E9%A2%98%EF%BC%88Internal%20Topic%EF%BC%89__consumer_offsets%E3%80%82/" target="_self">
         <div>
-          77 AQS 在 CountDownLatch 等类中的应用原理是什么？本课时我们主要讲解 AQS 在 CountDownLatch 类中的应用原理，即在 CountDownLatch 中如何利用 AQS 去实现 CountDownLatch 自己的线程协作逻辑的。本课时会包含一定的源码分析。 AQS 用法我们先讲一下 AQS 的用法。如果想使用 AQS 来写一个自己的线程协作工具类，通常而言是分
+          Kafka 中神秘的内部主题（Internal Topic）__consumer_offsets。 __consumer_offsets 在 Kafka 源码中有个更为正式的名字，叫位移主题，即 Offsets Topic。  老版本 Consumer 的位移管理是依托于 Apache ZooKeeper 的，它会自动或手动地将位移数据提交到 ZooKeeper 中保存。当 Consumer 重启
         </div>
       </a>
 
@@ -224,18 +224,391 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-10-13 14:34" pubdate>
-              2022-10-13
+            <time datetime="2023-11-01 22:39" pubdate>
+              2023-11-01
             </time>
           </div>
         
         
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/kafka/">#kafka</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/09/20/%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E5%92%8C%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB(change%20buffer)/" target="_self">
+          mysql 普通索引和唯一索引的区别(change buffer)
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/09/20/%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E5%92%8C%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB(change%20buffer)/" target="_self">
+        <div>
+          在不同的业务场景下，应该选择普通索引，还是唯一索引？ 假设维护一个市民系统，每个人都有一个唯一的身份证号，而且业务代码已经保证了不会写入两个重复的身份证号。如果市民系统需要按照身份证号查姓名，就会执行类似这样的 SQL 语句： 1select name from CUser where id_card = &#x27;xxxxxxxyyyyyyzzzzz&#x27;;  所以，你一定会考虑在 id
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-09-20 21:25" pubdate>
+              2023-09-20
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">#mysql</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/08/24/mysql%20InnoDB%E6%9E%B6%E6%9E%84/" target="_self">
+          mysql InnoDB架构
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/24/mysql%20InnoDB%E6%9E%B6%E6%9E%84/" target="_self">
+        <div>
+          在介绍之前先来看看InnoDB的架构图：  InnoDB内存结构主要由两部分组成：Buffer Pool和 Redo LogBuffer。 1.Buffer Pool缓冲池作用BufferPool 作为内存中的一块区域，在Innodb访问表的时候会将数据页和索引页缓存到缓冲池中。Innodb不管是主键索引还是辅助索引都是以页为单位存储在磁盘空间中的。 当Innodb访问某个页的数据时候，会先把这个
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-08-24 22:38" pubdate>
+              2023-08-24
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">#mysql</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/08/11/kafka%E7%9A%84%20groupid%20%E4%B8%8E%20auto.offset.reset/" target="_self">
+          kafka的 groupid 与 auto.offset.reset
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/11/kafka%E7%9A%84%20groupid%20%E4%B8%8E%20auto.offset.reset/" target="_self">
+        <div>
+          通常我们消费kafka数据的时候都会设置两个参数： 123Properties props = new Properties();props.put(&quot;group.id&quot;, groupId);props.put(&quot;auto.offset.reset&quot;, autoOffset);   kafka-0.10.1.X版本之前: auto.offset.reset
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-08-11 16:09" pubdate>
+              2023-08-11
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/kafka/">#kafka</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/08/08/%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E9%87%8D%E5%B9%B3%E8%A1%A1%E8%83%BD%E9%81%BF%E5%85%8D%E5%90%97/" target="_self">
+          kafka消费者组重平衡能避免吗
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/08/%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E9%87%8D%E5%B9%B3%E8%A1%A1%E8%83%BD%E9%81%BF%E5%85%8D%E5%90%97/" target="_self">
+        <div>
+          消费者组重平衡能避免吗? 重平衡，也就是 Rebalance， 就是让一个 Consumer Group 下所有的 Consumer 实例就如何消费订阅主题的所有分区达成共识的过程。在 Rebalance 过程中，所有 Consumer 实例共同参与，在协调者组件的帮助下，完成订阅主题分区的分配。但是，在整个过程中，所有实例都不能消费任何消息，因此它对 Consumer 的 TPS 影响很大。 所
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-08-08 23:11" pubdate>
+              2023-08-08
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/kafka/">#kafka</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/06/12/mysql%E4%B8%89%E5%A4%A7%E6%97%A5%E5%BF%97/" target="_self">
+          mysql三大日志
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/12/mysql%E4%B8%89%E5%A4%A7%E6%97%A5%E5%BF%97/" target="_self">
+        <div>
+          日志是 mysql 数据库的重要组成部分，记录着数据库运行期间各种状态信息。 mysql日志主要包括错误日志、查询日志、慢查询日志、事务日志、二进制日志几大类。作为开发，我们重点需要关注的是二进制日志( binlog )和事务日志(包括redo log 和 undo log )，本文接下来会详细介绍这三种日志。 binlogbinlog 用于记录数据库执行的写入性操作(不包括查询)信息，以二进制的
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-06-12 21:09" pubdate>
+              2023-06-12
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">#mysql</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/03/21/mysql%E5%8F%8C1/" target="_self">
+          mysql双1设置
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/21/mysql%E5%8F%8C1/" target="_self">
+        <div>
+          innodb_flush_log_at_trx_commit 和 sync_binlog 是 MySQL 的两个配置参数，前者是 InnoDB 引擎特有的。之所以把这两个参数放在一起讨论，是因为在实际应用中，它们的配置对于 MySQL 的性能有很大影响。 1. innodb_flush_log_at_trx_commit简而言之，innodb_flush_log_at_trx_commit 参数指
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-03-21 20:23" pubdate>
+              2023-03-21
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">#mysql</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/03/13/mysql%E5%88%86%E5%8C%BA%E8%A1%A8/" target="_self">
+          mysql分区表
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/13/mysql%E5%88%86%E5%8C%BA%E8%A1%A8/" target="_self">
+        <div>
+          分区表有什么问题，为什么公司规范不让使用分区表呢？  分区表是什么？为了说明分区表的组织形式，我先创建一个表 t： 1234567891011CREATE TABLE `t` (  `ftime` datetime NOT NULL,  `c` int(11) DEFAULT NULL,  KEY (`ftime`)) ENGINE=InnoDB DEFAULT CHARSET=latin1PAR
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-03-13 17:30" pubdate>
+              2023-03-13
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/mysql/">#mysql</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/02/16/Apache%20Kafka%20%E7%9A%84%E5%89%AF%E6%9C%AC%E6%9C%BA%E5%88%B6%E3%80%82/" target="_self">
+          kafka的副本机制
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/16/Apache%20Kafka%20%E7%9A%84%E5%89%AF%E6%9C%AC%E6%9C%BA%E5%88%B6%E3%80%82/" target="_self">
+        <div>
+          所谓的副本机制（Replication），也可以称之为备份机制，通常是指分布式系统在多台网络互联的机器上保存有相同的数据拷贝。副本机制有什么好处呢？  提供数据冗余。即使系统部分组件失效，系统依然能够继续运转，因而增加了整体可用性以及数据持久性。 提供高伸缩性。支持横向扩展，能够通过增加机器的方式来提升读性能，进而提高读操作吞吐量。 改善数据局部性。允许将数据放入与用户地理位置相近的地方，从而降低
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-02-16 22:31" pubdate>
+              2023-02-16
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/kafka/">#kafka</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/01/28/kafka%20partiton%E4%B8%AD%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" target="_self">
+          kafka partition中文件存储
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/28/kafka%20partiton%E4%B8%AD%E6%96%87%E4%BB%B6%E5%AD%98%E5%82%A8%E6%96%B9%E5%BC%8F/" target="_self">
+        <div>
+          Kafka部分名词解释如下：  Broker：消息中间件处理结点，一个Kafka节点就是一个broker，多个broker可以组成一个Kafka集群。 Topic：一类消息，例如page view日志、click日志等都可以以topic的形式存在，Kafka集群能够同时负责多个topic的分发。 Partition：topic物理上的分组，一个topic可以分为多个partition，每个part
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-01-28 21:13" pubdate>
+              2023-01-28
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/kafka/">#kafka</a>
+            
+          </div>
         
       </div>
     </article>
   </div>
 
 
+
+  <nav aria-label="navigation">
+    <span class="pagination" id="pagination">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/#board">2</a><a class="page-number" href="/page/3/#board">3</a><a class="extend next" rel="next" href="/page/2/#board"><i class="iconfont icon-arrowright"></i></a>
+    </span>
+  </nav>
 
 
 
