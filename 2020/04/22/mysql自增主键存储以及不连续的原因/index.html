@@ -13,14 +13,14 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
   <meta name="theme-color" content="#CDB38B">
-  <meta name="author" content="John Doe">
+  <meta name="author" content="Lin">
   <meta name="keywords" content="">
   
     <meta name="description" content="自增主键可以让聚集索引尽量地保持递增顺序插入，避免了随机查询，从而提高了查询效率 但实际上，MySQL 的自增主键并不能保证一定是连续递增的。 下面举个例子来看下，如下所示创建一张表：  自增值保存在哪里？ 使用 insert into test_pk values(null, 1, 1) 插入一行数据，再执行 show create table 命令来看一下表的结构定义：  上述表的结构定义存放">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mysql自增主键存储以及不连续的原因">
 <meta property="og:url" content="http://example.com/2020/04/22/mysql%E8%87%AA%E5%A2%9E%E4%B8%BB%E9%94%AE%E5%AD%98%E5%82%A8%E4%BB%A5%E5%8F%8A%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E5%8E%9F%E5%9B%A0/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:site_name" content="fatyoung笔记">
 <meta property="og:description" content="自增主键可以让聚集索引尽量地保持递增顺序插入，避免了随机查询，从而提高了查询效率 但实际上，MySQL 的自增主键并不能保证一定是连续递增的。 下面举个例子来看下，如下所示创建一张表：  自增值保存在哪里？ 使用 insert into test_pk values(null, 1, 1) 插入一行数据，再执行 show create table 命令来看一下表的结构定义：  上述表的结构定义存放">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://s5.51cto.com/oss/202212/06/8423be962d3ee0f6791415862a724f10d27587.png">
@@ -45,14 +45,14 @@
 <meta property="og:image" content="https://s7.51cto.com/oss/202212/06/135d92203485a60dba8443821c469751510bc3.png">
 <meta property="article:published_time" content="2020-04-22T13:22:29.000Z">
 <meta property="article:modified_time" content="2024-02-12T05:33:47.170Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:author" content="Lin">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://s5.51cto.com/oss/202212/06/8423be962d3ee0f6791415862a724f10d27587.png">
   
   
   
-  <title>mysql自增主键存储以及不连续的原因 - Hexo</title>
+  <title>mysql自增主键存储以及不连续的原因 - fatyoung笔记</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -436,7 +436,7 @@
       
         <div class="license-meta-item">
           <div>Author</div>
-          <div>John Doe</div>
+          <div>Lin</div>
         </div>
       
       

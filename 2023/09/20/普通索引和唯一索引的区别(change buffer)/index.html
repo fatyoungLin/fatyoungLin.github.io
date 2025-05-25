@@ -13,14 +13,14 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
   <meta name="theme-color" content="#CDB38B">
-  <meta name="author" content="John Doe">
+  <meta name="author" content="Lin">
   <meta name="keywords" content="">
   
     <meta name="description" content="在不同的业务场景下，应该选择普通索引，还是唯一索引？ 假设维护一个市民系统，每个人都有一个唯一的身份证号，而且业务代码已经保证了不会写入两个重复的身份证号。如果市民系统需要按照身份证号查姓名，就会执行类似这样的 SQL 语句： 1select name from CUser where id_card &#x3D; &amp;#x27;xxxxxxxyyyyyyzzzzz&amp;#x27;;  所以，你一定会考虑在 id">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mysql 普通索引和唯一索引的区别(change buffer)">
 <meta property="og:url" content="http://example.com/2023/09/20/%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E5%92%8C%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB(change%20buffer)/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:site_name" content="fatyoung笔记">
 <meta property="og:description" content="在不同的业务场景下，应该选择普通索引，还是唯一索引？ 假设维护一个市民系统，每个人都有一个唯一的身份证号，而且业务代码已经保证了不会写入两个重复的身份证号。如果市民系统需要按照身份证号查姓名，就会执行类似这样的 SQL 语句： 1select name from CUser where id_card &#x3D; &amp;#x27;xxxxxxxyyyyyyzzzzz&amp;#x27;;  所以，你一定会考虑在 id">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="http://learn.lianglianglee.com/%E6%9E%81%E5%AE%A2%E6%97%B6%E9%97%B4/assets/1ed9536031d6698570ea175a7b7f9a46-1584367389192.png">
@@ -28,14 +28,14 @@
 <meta property="og:image" content="http://learn.lianglianglee.com/%E6%9E%81%E5%AE%A2%E6%97%B6%E9%97%B4/assets/6dc743577af1dbcbb8550bddbfc5f98e-1584367389446.png">
 <meta property="article:published_time" content="2023-09-20T13:25:20.000Z">
 <meta property="article:modified_time" content="2024-02-11T11:03:27.880Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:author" content="Lin">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="http://learn.lianglianglee.com/%E6%9E%81%E5%AE%A2%E6%97%B6%E9%97%B4/assets/1ed9536031d6698570ea175a7b7f9a46-1584367389192.png">
   
   
   
-  <title>mysql 普通索引和唯一索引的区别(change buffer) - Hexo</title>
+  <title>mysql 普通索引和唯一索引的区别(change buffer) - fatyoung笔记</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -384,7 +384,7 @@
       
         <div class="license-meta-item">
           <div>Author</div>
-          <div>John Doe</div>
+          <div>Lin</div>
         </div>
       
       

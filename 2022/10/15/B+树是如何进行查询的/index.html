@@ -13,14 +13,14 @@
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
   <meta name="theme-color" content="#CDB38B">
-  <meta name="author" content="John Doe">
+  <meta name="author" content="Lin">
   <meta name="keywords" content="">
   
     <meta name="description" content="InnoDB 是如何存储数据的？ MySQL 支持多种存储引擎，不同的存储引擎，存储数据的方式也是不同的，最常使用的是 InnoDB 存储引擎。 记录是按照行来存储的，但是数据库的读取并不以「行」为单位，否则一次读取（也就是一次 I&#x2F;O 操作）只能处理一行数据，效率会非常低。 因此，InnoDB 的数据是按「数据页」为单位来读写的，也就是说，当需要读一条记录的时候，并不是将这个记录本身从">
 <meta property="og:type" content="article">
 <meta property="og:title" content="B+树是如何进行查询的">
 <meta property="og:url" content="http://example.com/2022/10/15/B+%E6%A0%91%E6%98%AF%E5%A6%82%E4%BD%95%E8%BF%9B%E8%A1%8C%E6%9F%A5%E8%AF%A2%E7%9A%84/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:site_name" content="fatyoung笔记">
 <meta property="og:description" content="InnoDB 是如何存储数据的？ MySQL 支持多种存储引擎，不同的存储引擎，存储数据的方式也是不同的，最常使用的是 InnoDB 存储引擎。 记录是按照行来存储的，但是数据库的读取并不以「行」为单位，否则一次读取（也就是一次 I&#x2F;O 操作）只能处理一行数据，效率会非常低。 因此，InnoDB 的数据是按「数据页」为单位来读写的，也就是说，当需要读一条记录的时候，并不是将这个记录本身从">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/f78da573e6dc4d00f8023cac699345ba.png">
@@ -31,14 +31,14 @@
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/9f2808f25f9c38a63059a4a04cd32ba6.png">
 <meta property="article:published_time" content="2022-10-15T04:34:55.000Z">
 <meta property="article:modified_time" content="2024-02-09T06:18:19.648Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:author" content="Lin">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://img-blog.csdnimg.cn/img_convert/f78da573e6dc4d00f8023cac699345ba.png">
   
   
   
-  <title>B+树是如何进行查询的 - Hexo</title>
+  <title>B+树是如何进行查询的 - fatyoung笔记</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -370,7 +370,7 @@
       
         <div class="license-meta-item">
           <div>Author</div>
-          <div>John Doe</div>
+          <div>Lin</div>
         </div>
       
       
