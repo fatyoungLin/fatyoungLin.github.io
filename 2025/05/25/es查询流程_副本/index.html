@@ -24,7 +24,7 @@
 <meta property="og:description" content="Elasticsearch 的查询过程涉及多个关键数据结构，其中 Term Index 和 Posting List 是倒排索引（Inverted Index）的核心组成部分。以下是详细流程及这些组件的具体作用：  1. 数据写入与索引构建在查询之前，数据会通过以下步骤建立倒排索引：  文本分词：将文档内容按分词器（如 standard、ik）拆分为词项（Term）。 生成倒排索引： Term D">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-05-25T13:13:11.000Z">
-<meta property="article:modified_time" content="2025-05-25T13:13:53.114Z">
+<meta property="article:modified_time" content="2025-05-25T13:18:42.474Z">
 <meta property="article:author" content="Lin">
 <meta property="article:tag" content="Elasticsearch">
 <meta name="twitter:card" content="summary_large_image">
@@ -208,7 +208,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.5k words
+          2.1k words
         
       </span>
     
@@ -219,7 +219,7 @@
         
         
         
-          30 mins
+          18 mins
         
       </span>
     
@@ -310,56 +310,6 @@
 <li><strong>并集（OR）</strong>：合并去重 DocID。</li>
 </ul>
 <figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs gcode"><span class="hljs-comment">// 伪代码示例：跳表交集合并</span><br>   <span class="hljs-keyword">while</span> <span class="hljs-comment">(cursor1 &lt; list1.size()</span> &amp;&amp; cursor<span class="hljs-number">2</span> &lt; list<span class="hljs-number">2.</span>size<span class="hljs-comment">()</span>) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-comment">(list1[cursor1] == list2[cursor2])</span> &#123;<br>           result.add<span class="hljs-comment">(list1[cursor1])</span>;<br>           cursor<span class="hljs-number">1</span>++; cursor<span class="hljs-number">2</span>++;<br>       &#125; else <span class="hljs-keyword">if</span> <span class="hljs-comment">(list1[cursor1] &lt; list2[cursor2])</span> &#123;<br>           cursor<span class="hljs-number">1</span> = skipTo<span class="hljs-comment">(cursor1, list2[cursor2])</span>;<br>       &#125; else &#123;<br>           cursor<span class="hljs-number">2</span> = skipTo<span class="hljs-comment">(cursor2, list1[cursor1])</span>;<br>       &#125;<br>   &#125;<br></code></pre></td></tr></table></figure></li>
-</ol>
-<p>Elasticsearch 的查询过程涉及多个关键数据结构，其中 <strong>Term Index</strong> 和 <strong>Posting List</strong> 是倒排索引（Inverted Index）的核心组成部分。以下是详细流程及这些组件的具体作用：</p>
-<hr>
-<h5 id="1-数据写入与索引构建-1"><a href="#1-数据写入与索引构建-1" class="headerlink" title="1. 数据写入与索引构建"></a><strong>1. 数据写入与索引构建</strong></h5><p>在查询之前，数据会通过以下步骤建立倒排索引：</p>
-<ol>
-<li><strong>文本分词</strong>：将文档内容按分词器（如 <code>standard</code>、<code>ik</code>）拆分为词项（Term）。</li>
-<li><strong>生成倒排索引</strong>：<ul>
-<li><strong>Term Dictionary</strong>：存储所有唯一词项（如 “apple”、”banana”），按字典序排列。</li>
-<li><strong>Term Index</strong>：基于 FST（Finite State Transducer）的词项索引，用于快速定位 Term 在 Term Dictionary 中的位置。</li>
-<li><strong>Posting List</strong>：记录每个 Term 对应的文档列表（DocID）、词频（TF）、位置（Position）等元数据。</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h5 id="2-查询过程详解-1"><a href="#2-查询过程详解-1" class="headerlink" title="2. 查询过程详解"></a><strong>2. 查询过程详解</strong></h5><p>以 <strong>Term Query</strong>（精确匹配词项）为例，查询流程如下：</p>
-<h5 id="1-解析查询请求-1"><a href="#1-解析查询请求-1" class="headerlink" title="(1) 解析查询请求"></a><strong>(1) 解析查询请求</strong></h5><p>用户发起查询 <code>GET /index/_search &#123; &quot;query&quot;: &#123; &quot;term&quot;: &#123; &quot;text&quot;: &quot;apple&quot; &#125; &#125; &#125;</code>，Elasticsearch 解析请求，确定目标字段（<code>text</code>）和查询词项（<code>apple</code>）。</p>
-<h5 id="2-定位-Term-1"><a href="#2-定位-Term-1" class="headerlink" title="(2) 定位 Term"></a><strong>(2) 定位 Term</strong></h5><ul>
-<li><strong>Term Index（FST）</strong>：<ul>
-<li>在内存中快速匹配词项前缀，缩小查找范围。</li>
-<li>例如：查找 “apple” 时，FST 跳过不相关前缀（如 “appl” 之前的项），定位到 “apple” 在 Term Dictionary 中的大致位置。</li>
-</ul>
-</li>
-<li><strong>Term Dictionary</strong>：<ul>
-<li>基于 FST 的定位结果，从磁盘或内存中检索完整词项 “apple”。</li>
-</ul>
-</li>
-</ul>
-<h5 id="3-获取-Posting-List-1"><a href="#3-获取-Posting-List-1" class="headerlink" title="(3) 获取 Posting List"></a><strong>(3) 获取 Posting List</strong></h5><ul>
-<li><strong>Posting List 结构</strong>：<ul>
-<li><strong>DocIDs</strong>：包含 “apple” 的文档 ID 列表（如 <code>[1, 3, 5]</code>）。</li>
-<li><strong>词频（TF）</strong>：每个文档中 “apple” 出现的次数。</li>
-<li><strong>位置（Position）</strong>：词项在文档中的具体位置（用于短语查询）。</li>
-</ul>
-</li>
-<li><strong>存储优化</strong>：<ul>
-<li><strong>压缩算法</strong>：如 Frame Of Reference（FOR）或 Roaring Bitmaps，减少存储空间。</li>
-<li><strong>分块存储</strong>：Posting List 按块划分，支持快速跳跃遍历。</li>
-</ul>
-</li>
-</ul>
-<h5 id="4-合并-Posting-List（复杂查询）-1"><a href="#4-合并-Posting-List（复杂查询）-1" class="headerlink" title="(4) 合并 Posting List（复杂查询）"></a><strong>(4) 合并 Posting List（复杂查询）</strong></h5><p>对于组合查询（如 <code>&quot;apple AND banana&quot;</code>）：</p>
-<ol>
-<li><p>分别获取 “apple” 和 “banana” 的 Posting List。</p>
-</li>
-<li><p><strong>合并操作</strong>：</p>
-<ul>
-<li><strong>交集（AND）</strong>：使用跳表（Skip List）或位图（Bitmap）快速找到共同 DocID。</li>
-<li><strong>并集（OR）</strong>：合并去重 DocID。</li>
-</ul>
-<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs gcode"><span class="hljs-comment">// 伪代码示例：跳表交集合并</span><br><span class="hljs-keyword">while</span> <span class="hljs-comment">(cursor1 &lt; list1.size()</span> &amp;&amp; cursor<span class="hljs-number">2</span> &lt; list<span class="hljs-number">2.</span>size<span class="hljs-comment">()</span>) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-comment">(list1[cursor1] == list2[cursor2])</span> &#123;<br>        result.add<span class="hljs-comment">(list1[cursor1])</span>;<br>        cursor<span class="hljs-number">1</span>++; cursor<span class="hljs-number">2</span>++;<br>    &#125; else <span class="hljs-keyword">if</span> <span class="hljs-comment">(list1[cursor1] &lt; list2[cursor2])</span> &#123;<br>        cursor<span class="hljs-number">1</span> = skipTo<span class="hljs-comment">(cursor1, list2[cursor2])</span>;<br>    &#125; else &#123;<br>        cursor<span class="hljs-number">2</span> = skipTo<span class="hljs-comment">(cursor2, list1[cursor1])</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure></li>
 </ol>
 <h5 id="5-相关性评分与排序"><a href="#5-相关性评分与排序" class="headerlink" title="(5) 相关性评分与排序"></a><strong>(5) 相关性评分与排序</strong></h5><ul>
 <li><p><strong>评分模型</strong>：使用 BM25 或 TF-IDF 计算文档相关性得分。</p>
